@@ -1,0 +1,30 @@
+body {
+    background-color: #eee;
+  }
+  
+  .profile-section {
+    background-color: #eee;
+  }
+  
+  .breadcrumb-box {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .profile-img {
+    width: 150px;
+  }
+  
+  .project-label {
+    font-size: 0.77rem;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .progress-bar-custom {
+    height: 5px;
+    margin-bottom: 1rem;
+  }
+  
