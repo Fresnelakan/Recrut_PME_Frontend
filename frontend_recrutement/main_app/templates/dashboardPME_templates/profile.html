@@ -1,0 +1,233 @@
+{% extends "base2.html" %}
+{% load static %}
+
+{% block style %}
+<style>
+    /* Votre CSS existant pour le formulaire */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f7f6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        color: #333;
+    }
+
+    .container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 500px;
+        box-sizing: border-box;
+    }
+
+    h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-size: 2em;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input[type="text"],
+    textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 1em;
+        transition: border-color 0.3s ease;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+        border-color: #007bff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .file-upload-button {
+        display: block;
+        background-color: #007bff;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.3s ease;
+    }
+
+    .file-upload-button:hover {
+        background-color: #0056b3;
+    }
+
+    #file-name {
+        margin-top: 10px;
+        font-style: italic;
+        color: #666;
+        text-align: center;
+    }
+
+    button[type="submit"] {
+        width: 100%;
+        background-color: #28a745;
+        color: white;
+        padding: 15px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        margin-top: 20px;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #218838;
+    }
+
+    /* Styles pour les messages de Django */
+    .messages {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+    }
+    .messages li {
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .messages .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .messages .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .messages .warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+    }
+    .messages .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+</style>     
+{% endblock style %}
+
+{% block content %}
+<div class="container">
+    <h2>Créer un Profil Entreprise</h2>
+
+    {# Afficher les messages de Django ici #}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {# Le formulaire soumettra directement à la vue Django #}
+    <form method="post" action="{% url 'profil' %}" enctype="multipart/form-data"> 
+        {% csrf_token %} {# Très important pour la sécurité de Django #}
+        
+        <div class="form-group">
+            <label for="nom">Nom de l'entreprise</label>
+            {# Pré-remplit le champ en cas d'erreur de soumission #}
+            <input type="text" id="nom" name="nom" required placeholder="Ex: Ma Super Entreprise" value="{{ nom|default_if_none:'' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description de l'entreprise</label>
+            {# Pré-remplit le champ en cas d'erreur de soumission #}
+            <textarea id="description" name="description" rows="5" required placeholder="Décrivez votre entreprise en quelques mots...">{{ description|default_if_none:'' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="logo">Logo de l'entreprise</label>
+            <div class="file-upload-wrapper">
+                <input type="file" id="logo" name="logo" accept="image/*">
+                <span class="file-upload-button">Choisir un fichier</span>
+            </div>
+            <div id="file-name">Aucun fichier choisi</div>
+            {# Si un logo était déjà présent ou une erreur s'est produite #}
+            {% if profile.logo %}
+                <p style="margin-top: 10px; font-style: italic; color: #666;">Logo actuel : <a href="{{ profile.logo.url }}" target="_blank">{{ profile.logo.name }}</a></p>
+            {% elif logo %} {# Si le logo a été soumi mais qu'il y a eu une erreur et le formulaire est rechargé #}
+                <p style="margin-top: 10px; font-style: italic; color: #666;">Fichier sélectionné : {{ logo.name }}</p>
+            {% endif %}
+        </div>
+
+        <button type="submit">Créer le Profil</button>
+    </form>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+    // JavaScript simple pour afficher le nom du fichier sélectionné
+    document.getElementById('logo').addEventListener('change', function() {
+        var fileName = this.files[0] ? this.files[0].name : 'Aucun fichier choisi';
+        document.getElementById('file-name').textContent = fileName;
+    });
+
+    // Optionnel : Script pour faire disparaître les messages de succès après un certain temps
+    window.onload = function() {
+        const messages = document.querySelectorAll('.messages li.success');
+        messages.forEach(function(msg) {
+            setTimeout(function() {
+                msg.style.opacity = '0';
+                msg.style.transition = 'opacity 0.5s ease-out';
+                setTimeout(function() {
+                    msg.remove();
+                }, 500); // Supprime l'élément après la transition
+            }, 5000); // Disparaît après 5 secondes
+        });
+    };
+</script>
+{% endblock script %}

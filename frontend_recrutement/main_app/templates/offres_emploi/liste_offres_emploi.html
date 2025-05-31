@@ -1,0 +1,58 @@
+{# main_app/templates/offres_emploi/liste_offres.html #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titre_page|default:"Liste des Offres" }}</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 20px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        h1 { text-align: center; color: #333; }
+        .offre { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; background-color: #f9f9f9; }
+        .offre h3 { margin-top: 0; color: #007bff; }
+        .offre p { margin-bottom: 10px; }
+        .offre strong { display: inline-block; width: 120px; } /* Alignement simple */
+        .offre .description { margin-top: 15px; border-top: 1px dashed #eee; padding-top: 15px; font-size: 0.95em; line-height: 1.5; }
+        .no-offers { text-align: center; color: #666; }
+         .back-link { display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #007bff; }
+         .back-link:hover { text-decoration: underline; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ titre_page|default:"Liste des Offres d'Emploi" }}</h1>
+
+        {% if offres %}
+            {% for offre in offres %}
+
+                <div class="offre">
+                    <h3>{{ offre.titre }}</h3>
+                    <p><strong>Entreprise :</strong> {{ offre.entreprise }}</p>
+                    {% if offre.localisation %}<p><strong>Localisation :</strong> {{ offre.localisation }}</p>{% endif %}
+                    {% if offre.type_contrat %}<p><strong>Type de contrat :</strong> {{ offre.get_type_contrat_display }}</p>{% endif %} {# get_FIELD_display pour les choices #}
+                    {% if offre.salaire %}<p><strong>Salaire :</strong> {{ offre.salaire }}</p>{% endif %}
+                    <div class="description">
+                        <h4>Description :</h4>
+                        {{ offre.description|linebreaksbr }} {# Convertit les sauts de ligne en <br> #}
+                    </div>
+                     {% if offre.profil %}
+                        <div class="description"> {# Réutiliser la classe pour le style #}
+                            <h4>Profil recherché / Compétences :</h4>
+                            {{ offre.profil|linebreaksbr }}
+                        </div>
+                     {% endif %}
+                    <p><small>Publiée le : {{ offre.date_publication|date:"d/m/Y H:i" }}</small></p>
+                    {# Vous pourriez ajouter un lien "Voir Détails" ici si vous avez une vue détail #}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-offers">Aucune offre d'emploi disponible pour le moment.</p>
+        {% endif %}
+
+        
+
+    </div>
+</body>
+</html>

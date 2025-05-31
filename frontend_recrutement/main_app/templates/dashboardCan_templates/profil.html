@@ -1,0 +1,425 @@
+{% load static %} {# Toujours utile si tu as d'autres ressources statiques comme des images, même si ici la photo de profil est une placeholder URL #}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre Profil (Modifiable)</title>
+    <style>
+        /* CSS intégré pour le style de la carte de profil */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8; /* Fond gris très clair */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Aligner en haut pour permettre le défilement */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff; /* Fond blanc de la carte */
+            border-radius: 10px; /* Coins arrondis */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* Ombre douce */
+            width: 90%; /* Largeur relative */
+            max-width: 900px; /* Largeur maximale fixe */
+            display: grid;
+            grid-template-columns: 1fr 2fr; /* Layout en deux colonnes: 1/3 à gauche, 2/3 à droite */
+            gap: 20px; /* Espacement entre les colonnes */
+            padding: 30px; /* Padding interne */
+            box-sizing: border-box;
+        }
+
+        /* Styles pour les sections de gauche (Profil et Réseaux Sociaux) */
+        .profile-info, .social-links, .upload-cv-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centrer le contenu horizontalement */
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Petite ombre pour chaque section */
+            text-align: center; /* Centrer le texte dans ces blocs */
+            margin-bottom: 20px; /* Espacement entre les blocs de la colonne de gauche */
+        }
+
+        .profile-info {
+            margin-bottom: 20px; /* Espacement entre info profil et réseaux sociaux */
+        }
+
+        .profile-image-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%; /* Image circulaire */
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 2px solid #ddd; /* Bordure autour de l'image */
+        }
+
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* S'assurer que l'image remplit le conteneur */
+        }
+
+        .user-name {
+            font-size: 1.5em; /* Grande taille de police pour le nom */
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .placeholder-text {
+            font-size: 0.9em;
+            color: #777; /* Couleur de texte plus claire */
+            margin-bottom: 15px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 10px; /* Espacement entre les boutons */
+            margin-bottom: 20px;
+        }
+
+        .follow-button {
+            background-color: #3b82f6; /* Bleu vif */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+
+        .follow-button:hover {
+            background-color: #2563eb; /* Bleu plus foncé au survol */
+        }
+
+        .message-button {
+            background-color: #e5e7eb; /* Gris clair */
+            color: #555;
+            border: 1px solid #d1d5db; /* Bordure grise */
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .message-button:hover {
+            background-color: #d4d6da;
+            border-color: #b3b6b9;
+        }
+
+        .social-links h3, .upload-cv-section h3 {
+            font-size: 1.1em;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: normal;
+            text-align: left; /* Aligner le titre à gauche dans ce bloc */
+            width: 100%; /* S'assurer qu'il prend toute la largeur */
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #333;
+            text-decoration: none;
+            width: 100%; /* S'assurer que le lien prend toute la largeur */
+            justify-content: flex-start; /* Aligner le contenu du lien à gauche */
+        }
+
+        .social-link:hover {
+            color: #007bff; /* Changement de couleur au survol */
+        }
+
+        .social-icon {
+            font-size: 1.2em;
+            color: #777; /* Couleur de l'icône */
+            min-width: 20px; /* Pour aligner les textes */
+            text-align: center;
+        }
+        .social-value {
+            color: #777; /* Couleur du texte ID social */
+            margin-left: auto; /* Pousser la valeur à l'extrême droite */
+        }
+
+        /* Styles pour le contenu principal à droite (Contact Info, Skills) */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Espacement entre les sections de droite */
+        }
+
+        .contact-info, .skills-section {
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .contact-info {
+            /* Pas de changement de taille spécifique ici, le grid auto s'adaptera */
+        }
+
+        .contact-info h2 {
+            font-size: 1.3em;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr; /* Label à gauche, champ à droite */
+            margin-bottom: 10px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.95em;
+        }
+
+        .info-value-field { /* Nouveau style pour les champs de saisie */
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            font-size: 0.95em;
+            box-sizing: border-box; /* Inclure padding et border dans la largeur */
+        }
+        .info-value-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .skills-section h3 {
+            background-color: #e5e7eb; /* Fond gris pour le titre de section */
+            color: #555;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            font-weight: normal;
+            display: inline-block; /* Pour que le background ne prenne que la largeur du texte */
+        }
+
+        .skill-bar {
+            background-color: #f3f4f6; /* Fond de la barre de progression (gris clair) */
+            border-radius: 5px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .skill-progress {
+            background-color: #3b82f6; /* Couleur de la progression (bleu) */
+            height: 10px;
+            border-radius: 5px;
+            /* La largeur sera définie inline via Django pour des valeurs dynamiques */
+        }
+
+        .skill-label {
+            display: flex;
+            justify-content: space-between; /* Pour que le label et le pourcentage soient séparés */
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        /* Bouton d'enregistrement */
+        .save-button {
+            background-color: #28a745; /* Vert pour enregistrer */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 20px; /* Espacement au-dessus du bouton */
+            transition: background-color 0.2s ease;
+            width: fit-content; /* S'adapte au contenu */
+            align-self: flex-end; /* Aligner à droite dans le flex container main-content */
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+
+        /* Styles pour l'upload de CV */
+        .cv-upload-group {
+            width: 100%;
+            text-align: left; /* Aligner les éléments à gauche */
+            padding: 10px 0;
+        }
+        .cv-upload-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+            font-size: 0.95em;
+        }
+        .cv-upload-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .cv-upload-input-container input[type="file"] {
+            display: none; /* Cache l'input file par défaut */
+        }
+        .custom-file-upload {
+            background-color: #e0e0e0;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+        }
+        .custom-file-upload:hover {
+            background-color: #c9c9c9;
+        }
+        .cv-file-name {
+            color: #777;
+            font-size: 0.9em;
+            flex-grow: 1; /* Permet au nom du fichier de prendre l'espace restant */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Ajoute des points de suspension si le texte est trop long */
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr; /* Une seule colonne sur petits écrans */
+                padding: 20px;
+            }
+            .profile-info, .social-links, .contact-info, .skills-section, .upload-cv-section {
+                padding: 15px; /* Réduire le padding sur petits écrans */
+            }
+            .info-row {
+                grid-template-columns: 1fr; /* Les labels et champs s'empilent sur petits écrans */
+            }
+            .save-button {
+                width: 100%; /* Le bouton prend toute la largeur sur petits écrans */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div> {# Ceci est un conteneur pour empiler les blocs de gauche #}
+            <div class="profile-info">
+                {# Photo de profil - Utilisation d'un placeholder pour l'exemple #}
+                
+                {# Nom d'utilisateur et texte d'accroche #}
+                <h2 class="user-name">{% if profile.username %}{{ profile.username }}{% else %}Mon profil{% endif %}</h2>
+                
+                {# Boutons Follow et Message (statiques pour cet exemple) #}
+                <div class="profile-actions">
+                    
+                </div>
+            </div>
+
+            {% comment %} <div class="social-links">
+                <h3>Réseaux Sociaux</h3>
+                <a href="{{ profile.website_url|default:'#' }}" class="social-link">
+                    <span class="social-icon">🌐</span> Website
+                    <span class="social-value">{{ profile.website_display|default:'MonSite.com' }}</span>
+                </a>
+                <a href="{{ profile.twitter_url|default:'#' }}" class="social-link">
+                    <span class="social-icon">🐦</span> Twitter
+                    <span class="social-value">{{ profile.twitter_display|default:'@MonTwitter' }}</span>
+                </a>
+                <a href="{{ profile.facebook_url|default:'#' }}" class="social-link">
+                    <span class="social-icon">f</span> Facebook
+                    <span class="social-value">{{ profile.facebook_display|default:'MonFacebookID' }}</span>
+                </a>
+                <a href="{{ profile.instagram_url|default:'#' }}" class="social-link">
+                    <span class="social-icon">📷</span> Instagram
+                    <span class="social-value">{{ profile.instagram_display|default:'@MonInstagram' }}</span>
+                </a>
+            </div> {% endcomment %}
+
+            {# Nouveau Cadran pour l'upload de CV #}
+            <div class="upload-cv-section">
+                <h3>Téléverser votre CV</h3>
+                <form method="post" enctype="multipart/form-data" action="{% url 'mise_a_jour_cv' %}"> {# Remplace 'votre_url_de_mise_a_jour_cv' par l'URL réelle #}
+                    {% csrf_token %}
+                    <div class="cv-upload-group">
+                        <label for="cvFile">Sélectionnez un fichier CV (PDF, DOCX)</label>
+                        <div class="cv-upload-input-container">
+                            <input type="file" id="cvFile" name="cv_file" accept=".pdf,.doc,.docx" onchange="updateCvFileName(event)">
+                            <label for="cvFile" class="custom-file-upload">Choisir un fichier</label>
+                            <span id="cvFileName" class="cv-file-name">{% if profile.cv_filename %}{{ profile.cv_filename }}{% else %}Aucun fichier choisi{% endif %}</span>
+                        </div>
+                        {% if profile.cv_url %}
+                            <p style="font-size:0.85em; color:#555; margin-top:10px;">CV actuel : <a href="{{ profile.cv_url }}" target="_blank" style="color:#3b82f6; text-decoration:none;">Voir le CV</a></p>
+                        {% endif %}
+                        <button type="submit" class="save-button" style="margin-top:20px; align-self: flex-start;">Enregistrer le CV</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <form method="post" action="{% url 'mise_a_jour_profil' %}"> {# Remplace 'votre_url_de_mise_a_jour_profil' par l'URL réelle #}
+                {% csrf_token %}
+                <div class="contact-info">
+                    <h2>Informations </h2>
+                    <div class="info-row">
+                        <div class="info-label">Nom Complet</div>
+                        <input type="text" name="full_name" class="info-value-field" value="{% if profile.full_name %}{{ profile.full_name }}{% else %}Nom Prénom{% endif %}">
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Email</div>
+                        <input type="email" name="email" class="info-value-field" value="{% if profile.email %}{{ profile.email }}{% else %}exemple@domaine.com{% endif %}">
+                    </div>
+                    {% comment %} <div class="info-row">
+                        <div class="info-label">Téléphone</div>
+                        <input type="text" name="phone" class="info-value-field" value="{% if profile.phone %}{{ profile.phone }}{% else %}+123 456 7890{% endif %}">
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Mobile</div>
+                        <input type="text" name="mobile" class="info-value-field" value="{% if profile.mobile %}{{ profile.mobile }}{% else %}+123 456 7890{% endif %}">
+                    </div> {% endcomment %}
+                    <div class="info-row">
+                        <div class="info-label">Adresse</div>
+                        <input type="text" name="address" class="info-value-field" value="{% if profile.address %}{{ profile.address }}{% else %} Ville, Pays{% endif %}">
+                    </div>
+                
+                    <div class="info-row">
+                        <div class="info-label">Role</div>
+                        <input type="text" name="role" class="info-value-field" value="{% if profile.address %}{{ profile.address }}{% else %} Candidat{% endif %}">
+                    </div>
+
+                
+                {# Bouton d'enregistrement pour les informations de contact et compétences #}
+                <button type="submit" class="save-button">Enregistrer les modifications</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function updateCvFileName(event) {
+            const fileNameSpan = document.getElementById('cvFileName');
+            if (event.target.files.length > 0) {
+                fileNameSpan.textContent = event.target.files[0].name;
+            } else {
+                fileNameSpan.textContent = "{% if profile.cv_filename %}{{ profile.cv_filename }}{% else %}Aucun fichier choisi{% endif %}";
+            }
+        }
+    </script>
+</body>
+</html>

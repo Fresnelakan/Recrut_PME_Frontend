@@ -1,0 +1,372 @@
+{% extends "base2.html" %}
+{% load static %}
+{% block style %}
+    <style>
+        /* Styles généraux pour le corps et la disposition de la page */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            /* Important: Alignement au début pour que le contenu ne soit pas centré verticalement par défaut */
+            align-items: flex-start;
+            justify-content: center; /* Garder pour centrer si le contenu est plus petit que la largeur disponible */
+            min-height: 100vh;
+            margin: 0;
+            padding: 0; /* Supprimer le padding du body pour que le conteneur puisse s'étendre */
+        }
+
+        /* Conteneur principal qui gère les marges latérales de la page */
+        /* Assurez-vous que c'est le conteneur parent qui englobe votre block content */
+        /* Si 'base2.html' a déjà un conteneur qui gère cela, vous devrez ajuster */
+        .main-content-wrapper { /* Un nom de classe hypothétique pour le conteneur principal de votre page */
+            width: 100%; /* Prend toute la largeur */
+            padding: 20px 40px; /* Padding latéral pour ne pas coller aux bords, comme la barre de recherche */
+            box-sizing: border-box;
+            max-width: 1400px; /* Optionnel: définir une largeur maximale pour les très grands écrans */
+            margin: 0 auto; /* Centrer ce wrapper si max-width est défini */
+        }
+
+        /* Conteneur du formulaire */
+        .form-container {
+            background-color: #ffffff;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%; /* Important: Prendra toute la largeur disponible de son parent */
+            /* SUPPRIMÉ: max-width ici pour permettre l'expansion */
+            box-sizing: border-box;
+            margin-top: 30px; /* Ajuster la marge supérieure si nécessaire */
+            margin-bottom: 30px; /* Ajouter une marge inférieure */
+        }
+
+        /* Titre du formulaire */
+        .form-container h2 {
+            text-align: left;
+            margin-bottom: 35px;
+            color: #2c3e50;
+            font-size: 2.2em; /* Augmenter la taille du titre */
+            font-weight: 600;
+        }
+
+        /* Groupe de formulaire (label + input) */
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: #333;
+            font-size: 1.05em; /* Légèrement plus grand pour les labels */
+        }
+
+        /* Styles des inputs et textareas */
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="url"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 18px 22px; /* Plus de padding pour des champs plus grands */
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.1em; /* Taille de police légèrement plus grande pour les inputs */
+            color: #495057;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
+        .form-group input[type="url"]:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.18);
+        }
+
+        .form-group select {
+            height: auto; /* Permet à la hauteur d'être définie par le padding */
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 180px; /* Hauteur minimale du textarea encore augmentée */
+        }
+
+        /* Lignes de formulaire (utilisées pour les champs côte à côte) */
+        .form-row {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            min-width: 300px; /* Augmenter la largeur minimale pour les colonnes */
+            margin-bottom: 0;
+        }
+
+        /* Texte d'aide sous les champs */
+        .form-text {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        /* Bouton de soumission */
+        .btn-success {
+            display: block;
+            width: 100%;
+            padding: 20px; /* Encore plus de padding pour un bouton très grand */
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.35rem; /* Texte du bouton plus grand */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        /* Styles pour les messages d'erreur et de succès */
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: bold;
+            font-size: 1em;
+        }
+        .success-message {
+            color: #28a745;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        /* Style pour le lien "Voir les offres" après succès */
+        .success-message + p {
+            text-align: center;
+        }
+        .success-message + p > .btn-success {
+            display: inline-block !important;
+            width: auto !important;
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 1.05rem;
+            transform: none;
+        }
+        .success-message + p > .btn-success:hover {
+            transform: translateY(-1px);
+        }
+
+
+        /* Placeholder styles */
+        ::placeholder {
+            color: #a0a0a0;
+            opacity: 1;
+        }
+        :-ms-input-placeholder {
+            color: #a0a0a0;
+        }
+        ::-ms-input-placeholder {
+            color: #a0a0a0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) { /* Nouvelle breakpoint pour les grands écrans */
+            .main-content-wrapper {
+                padding: 20px 30px; /* Réduire le padding latéral sur les écrans plus petits */
+            }
+            .form-container {
+                padding: 40px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main-content-wrapper {
+                padding: 20px;
+            }
+            .form-container {
+                padding: 30px;
+            }
+            .form-container h2 {
+                font-size: 2em;
+            }
+            .form-group label {
+                font-size: 1em;
+            }
+            .form-group input[type="text"],
+            .form-group input[type="number"],
+            .form-group input[type="url"],
+            .form-group textarea,
+            .form-group select {
+                padding: 16px 20px;
+                font-size: 1.05em;
+            }
+            .form-row .form-group {
+                min-width: 250px;
+            }
+            .btn-success {
+                padding: 18px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content-wrapper {
+                padding: 15px;
+            }
+            .form-container {
+                padding: 25px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            .form-container h2 {
+                font-size: 1.8em;
+            }
+            .form-group {
+                margin-bottom: 20px;
+            }
+            .form-group input[type="text"],
+            .form-group input[type="number"],
+            .form-group input[type="url"],
+            .form-group textarea,
+            .form-group select {
+                padding: 14px 18px;
+                font-size: 1em;
+            }
+            .form-row {
+                gap: 20px;
+            }
+            .form-row .form-group {
+                min-width: 100%; /* Sur mobile, force à prendre toute la largeur */
+            }
+            .btn-success {
+                padding: 16px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content-wrapper {
+                padding: 10px;
+            }
+            .form-container {
+                padding: 20px;
+            }
+            .form-container h2 {
+                font-size: 1.6em;
+                text-align: center;
+            }
+            .form-group label {
+                font-size: 0.95em;
+            }
+            .form-group input[type="text"],
+            .form-group input[type="number"],
+            .form-group input[type="url"],
+            .form-group textarea,
+            .form-group select {
+                padding: 12px 15px;
+                font-size: 0.95em;
+            }
+            .btn-success {
+                padding: 14px;
+                font-size: 1rem;
+            }
+            .error-message, .success-message {
+                padding: 10px;
+                font-size: 0.88em;
+            }
+        }
+    </style>
+{% endblock style %}
+
+
+{% block content %}
+<div class="main-content-wrapper"> {# NOUVEAU CONTENEUR POUR GÉRER LA LARGEUR MAX ET LE PADDING LATÉRAL #}
+    <div class="form-container">
+        <h2>Créer une Nouvelle Offre d'Emploi</h2>
+
+        {# Afficher les messages d'erreur ou de succès renvoyés par la vue Django #}
+        {% if error_message %}
+            <p class="error-message">{{ error_message }}</p>
+        {% endif %}
+
+        {% if success_message %}
+            <p class="success-message">{{ success_message }}</p>
+            <p style="text-align: center;"><a href="{% url 'liste_offres_emploi' %}" class="btn btn-success">Voir les offres</a></p>
+        {% endif %}
+
+        <form method="post" action="{% url 'creer_offre_emploi' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="offerTitle">Titre de l'offre</label>
+                <input type="text" id="offerTitle" name="titre" placeholder="Développeur Web Junior" required>
+            </div>
+
+            <div class="form-group">
+                <label for="offerDescription">Description de l'offre</label>
+                <textarea id="offerDescription" name="description" rows="5" placeholder="Description complète de l'offre..." required></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="offerLocation">Localisation</label>
+                    <input type="text" id="offerLocation" name="location" placeholder="Paris, France" required>
+                </div>
+                <div class="form-group">
+                    <label for="offerSalary">Salaire (optionnel)</label>
+                    <input type="number" id="offerSalary" name="salary" placeholder="Ex: 35000 (annuel)" min="0">
+                    <small class="form-text">Si le salaire est annuel, indiquez le montant brut.</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contractType">Type de contrat</label>
+                    <select id="contractType" name="contract_type" required>
+                        <option value="">Sélectionnez un type</option>
+                        <option value="CDI">CDI</option>
+                        <option value="CDD">CDD</option>
+                        <option value="Freelance">Freelance</option>
+                        <option value="Stage">Stage</option>
+                        <option value="Alternance">Alternance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="experienceLevel">Niveau d'expérience</label>
+                    <select id="experienceLevel" name="experience_level" required>
+                        <option value="">Sélectionnez un niveau</option>
+                        <option value="Débutant">Débutant</option>
+                        <option value="Junior">Junior</option>
+                        <option value="Confirmé">Confirmé</option>
+                        <option value="Sénior">Sénior</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">Créer l'offre</button>
+        </form>
+    </div>
+</div>
+{% endblock content %}
