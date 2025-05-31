@@ -129,8 +129,8 @@
                     <div class="description"><strong>Description :</strong> {{ offre.description }}</div>
                 </div>
                 <div class="action-buttons">
-                    <a href="{% url 'offre_detail' offre.id %}" class="voir-plus-btn">Voir plus</a>
-
+                    
+                    <a href="{% url 'modifier_offre' offre.id %}" class="modifier-btn">Modifier</a>
                 </div>
             </div>
         {% endfor %}

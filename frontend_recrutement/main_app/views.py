@@ -58,60 +58,191 @@ def offres_emploi(request):
     return render(request, 'offres_emploi/offres_emploi.html', context)
 
 
-# main_app/views.py
+
+
+import requests
+from django.shortcuts import render
+
+import requests
 from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
 
-def liste_offres_emploi(request):
-    # URL de l'API backend qui expose la liste des offres
-    # Assurez-vous que settings.BACKEND_API_URL est défini dans votre settings.py
-    # et que '/api/offres/' est le chemin correct dans le urls.py de votre backend
-    api_url = f"http://127.0.0.1:8001/api/candidat/offres/"
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
 
-    offres = [] # Cette liste stockera les offres sous forme de dictionnaires Python
-    error_message = None # Pour afficher les erreurs API ou de connexion
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+
+def modifier_offre(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour modifier une offre.")
+        return redirect("login_page")
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"
+    offre = {}
+    error_message = None
+    success_message = None
+
+    # Récupérer les données de l’offre existante
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        offre = response.json()
+        
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer les détails de l’offre : {e}"
+        print(f"Erreur lors de l'appel API pour modifier : {e}")
+
+    # Gérer la soumission du formulaire
+    if request.method == "POST":
+        offer_data = {
+            'titre': request.POST.get('titre', ''),
+            'description': request.POST.get('description', ''),
+            'lieu': request.POST.get('lieu', ''),
+            'type_contrat': request.POST.get('type_contrat', ''),
+        }
+
+        try:
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.put(api_url, json=offer_data, headers=headers)  # Utilisez PUT ou PATCH selon votre API
+            response.raise_for_status()
+            success_message = "Offre modifiée avec succès !"
+            return redirect('liste_offres_emploi')
+        except requests.exceptions.RequestException as e:
+            error_message = f"Erreur lors de la modification de l’offre : {e}"
+            print(f"Erreur lors de l'appel API pour sauvegarder : {e}")
+
+    context = {
+        'offre': offre,
+        'error_message': error_message,
+        'success_message': success_message,
+        'titre_page': f"Modifier l'offre - {offre.get('titre', 'Inconnue')}"
+    }
+
+    return render(request, 'offres_emploi/modifier_offre.html', context)
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+
+def offre_detail(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les détails.")
+        return redirect("login_page")
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"  # Endpoint pour une offre spécifique
+    offre = {}
+    error_message = None
 
     try:
-        # Faire une requête GET à l'API backend
-        # Si votre API requiert une authentification, ajoutez les headers nécessaires ici
-        # Exemple avec un token en session :
-        # headers = {'Authorization': f'Bearer {request.session.get("access_token")}'}
-        # response = requests.get(api_url, headers=headers)
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
 
-        response = requests.get(api_url) # Appel HTTP GET
-        response.raise_for_status() # Lève une exception pour les codes d'erreur HTTP (4xx ou 5xx)
-
-        # Si la requête est un succès (statut 200 OK), décoder la réponse JSON
-        data = response.json()
-
-        # Les API DRF paginées renvoient souvent un objet avec une clé 'results'
-        # Si votre API est paginée, les offres seront dans data['results']
-        if isinstance(data, dict) and 'results' in data:
-             offres = data.get('results', [])
-        else:
-             # Si l'API renvoie directement une liste d'objets
-             offres = data
-
-        # Note : Les offres ici sont des dictionnaires Python, pas des instances de modèle OffreEmploi.
+        offre = response.json()
+        # if 'date_publication' in offre:
+        #     date_obj = datetime.strptime(offre['date_publication'], '%Y-%m-%dT%H:%M:%SZ')
+        #      offre['date_publication'] = date_obj.strftime('%d/%m/%Y %H:%M')
 
     except requests.exceptions.RequestException as e:
-        # Gérer les erreurs de connexion (backend non démarré/accessible) ou les erreurs HTTP
-        error_message = f"Impossible de récupérer les offres depuis le backend : {e}"
-        print(f"Erreur lors de l'appel API pour la liste des offres : {e}") # Loguer l'erreur
+        error_message = f"Impossible de récupérer les détails de l’offre : {e}"
+        print(f"Erreur lors de l'appel API pour les détails : {e}")
 
-    # Préparer le contexte à passer au template
     context = {
-        'offres': offres, # Ceci est une liste de dictionnaires/listes vide en cas d'erreur
-        'error_message': error_message, # Sera None si pas d'erreur
+        'offre': offre,
+        'error_message': error_message,
+        'titre_page': f"Détails de l'offre - {offre.get('titre', 'Inconnue')}"
+    }
+
+    return render(request, 'offres_emploi/offre_detail.html', context)
+def liste_offres_emploi(request):
+    print("Contenu de la session :", request.session.items())  # Débogage
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les offres.")
+        return redirect("login_page")  # Utilisez 'login_page' comme dans creer_offre_emploi
+
+    api_url = "http://127.0.0.1:8001/api/pme/offres/"
+    offres = []
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print("Données de l'API :", data)  # Débogage
+        if isinstance(data, dict) and 'results' in data:
+            offres = data.get('results', [])
+        else:
+            offres = data
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer les offres depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour la liste des offres : {e}")
+
+    context = {
+        'offres': offres,
+        'error_message': error_message,
         'titre_page': "Liste des Offres d'Emploi",
     }
 
-    # Rendre le template d'affichage de la liste
-    # Assurez-vous que 'offres_emploi/liste_offres.html' est le chemin correct
-    # Votre template doit itérer sur la liste 'offres' (qui contient des dictionnaires)
-    return render(request, 'offres_emploi/liste_offres_emploi.html', context) # Nouveau : template pour l4
+    return render(request, 'offres_emploi/liste_offres_emploi.html', context)
+def liste_offres(request):
+    print("Contenu de la session :", request.session.items())  # Débogage
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les offres.")
+        return redirect("login_page")  # Utilisez 'login_page' comme dans creer_offre_emploi
 
+    api_url = "http://127.0.0.1:8001/api/pme/offres/"
+    offres = []
+    error_message = None
 
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
 
+        data = response.json()
+        print("Données de l'API :", data)  # Débogage
+        if isinstance(data, dict) and 'results' in data:
+            offres = data.get('results', [])
+        else:
+            offres = data
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer les offres depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour la liste des offres : {e}")
+
+    context = {
+        'offres': offres,
+        'error_message': error_message,
+        'titre_page': "Liste des Offres d'Emploi",
+    }
+
+    return render(request, 'offres_emploi/modification.html', context)
 # votre_app/views.py
 
 
@@ -383,27 +514,77 @@ def register(request):
     
     return render(request, 'register.html')
 
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+from requests.exceptions import RequestException
+
 def dashboard_view(request):
     access_token = request.session.get("accessToken")
+    if not access_token:
+        messages.warning(request, "Veuillez vous connecter pour accéder au dashboard.")
+        return redirect("login")
+
     headers = {"Authorization": f"Bearer {access_token}"}
+    profile = {}
+    offres = []
+    error_message = None
 
-    response = requests.get(
-        "http://127.0.0.1:8001/api/auth/profile/",
-        headers=headers
-    )
-    
-    if(response.status_code == 200):
-        profile = response.json()
-        
-        if(profile.get('role') == 'Candidat'):
-            return render(request ,'dashboardCan_templates/index_can.html', {"profile" :profile})
-        else :
-            return render(request ,'dashboardPME_templates/index.html', {"profile" :profile})
-            
-            
-    
-    return render(request, 'dashboardPME_templates/index.html')
+    # Récupérer le profil utilisateur
+    try:
+        profile_response = requests.get("http://127.0.0.1:8001/api/auth/profile/", headers=headers)
+        profile_response.raise_for_status()
+        profile = profile_response.json()
+        print("Profil récupéré :", profile)
+    except RequestException as e:
+        messages.error(request, f"Erreur lors de la récupération du profil : {e}")
+        return redirect("login")
 
+    # Vérifier le rôle
+    role = profile.get("role")
+    if role != "Candidat":
+        return render(request, "dashboardPME_templates/index.html", {"profile": profile})
+
+    # Récupérer les offres d'emploi
+    try:
+        api_url = "http://127.0.0.1:8001/api/pme/offres/"
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print("Données des offres :", data)
+        if isinstance(data, dict) and "results" in data:
+            offres = data.get("results", [])
+        else:
+            offres = data
+
+        # Formater les dates et le nom de l'entreprise
+        for offre in offres:
+            if "date_publication" in offre:
+                date_obj = datetime.strptime(offre["date_publication"], "%Y-%m-%dT%H:%M:%SZ")
+                offre["date_publication"] = date_obj.strftime("%d/%m/%Y %H:%M")
+
+            if "entreprise" in offre and offre["entreprise"]:
+                if isinstance(offre["entreprise"], dict) and "nom" in offre["entreprise"]:
+                    offre["entreprise_nom"] = offre["entreprise"]["nom"]
+                else:
+                    offre["entreprise_nom"] = "Non spécifié"
+            else:
+                offre["entreprise_nom"] = "Non spécifié"
+
+    except RequestException as e:
+        error_message = f"Erreur lors de la récupération des offres : {e}"
+        print(f"Erreur offres :", error_message)
+
+    context = {
+        "profile": profile,
+        "offres": offres,
+        "error_message": error_message,
+        "titre_page": "Dashboard du Candidat",
+    }
+
+    return render(request, "dashboardCan_templates/index_can.html", context)
 def edit_profile(request):
     return render(request, 'profile/edit_profile.html')
 
