@@ -18,10 +18,12 @@ urlpatterns = [
     path('/', views.creer_profil_entreprise, name='profil'),
     path('modifier-offre/<int:offre_id>/', views.modifier_offre, name='modifier_offre'),
     path('modification', views.liste_offres, name='modification'),
-    # path('offres-emploi-can/', views.offres_emploi_can, name='offres_emploi_can'),
+    path('offres-emploi-can/', views.offres_emploi_can, name='offres_emploi_can'),
+    path('offre-candidat/<int:offre_id>/', views.offre_detail_candidat, name='offre_detail_candidat'),
+    path('postuler-offre/<int:offre_id>/', views.postuler_offre, name='postuler_offre'),
     
-    # path('telecharger-offre/<int:offre_id>/', views.telecharger_offre, name='telecharger_offre'),
+    path('telecharger-offre/<int:offre_id>/', views.telecharger_offre, name='telecharger_offre'),
     path('offre-detail/<int:offre_id>/', views.offre_detail, name='offre_detail'),
-    # path("profile-candidat/", views.profile_view_candidat, name="profile-candidat"),
+    path("profile-candidat/", views.profile_view_candidat, name="profile-candidat"),
    
 ]

@@ -1,0 +1,108 @@
+{% extends 'base1.html' %}
+
+{% block content %}
+<div class="container">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    
+    {% if offre %}
+         <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>{{ offre.titre }}</h2>
+                    <h5 class="text-muted">{{ offre.entreprise_nom }}</h5>
+                </div>
+                {% if deja_postule %}
+                    <button class="btn btn-success" disabled>
+                        <i class="bi bi-check-circle-fill"></i> Déjà postulé
+                    </button>
+                {% else %}
+                    <form method="post" action="{% url 'postuler_offre' offre.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary" id="postulerBtn">
+                            Postuler à cette offre
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Publiée le: {{ offre.date_publication }}
+                    <span class="badge bg-success ms-2">Active</span>
+                </p>
+                
+                <div class="mb-4">
+                    <h4>Description du poste:</h4>
+                    <p class="whitespace-pre-line">{{ offre.description }}</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'offres_emploi_can' %}" class="btn btn-secondary">
+                    Retour à la liste
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            Aucun détail disponible pour cette offre
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.getElementById('postulerBtn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    const btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi en cours...';
+    
+    const form = btn.closest('form');
+    const formData = new FormData(form);
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Affiche un message de succès
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                Votre candidature a bien été envoyée !
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container').prepend(alertDiv);
+            
+            // Désactive le bouton et change son apparence
+            form.innerHTML = `
+                <button class="btn btn-success" disabled>
+                    <i class="bi bi-check-circle-fill"></i> Déjà postulé
+                </button>
+            `;
+        } else {
+            alert(data.error || 'Erreur lors de la postulation');
+            btn.disabled = false;
+            btn.innerHTML = 'Postuler à cette offre';
+        }
+    })
+    .catch(error => {
+        alert('Erreur réseau: ' + error);
+        btn.disabled = false;
+        btn.innerHTML = 'Postuler à cette offre';
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.shortcuts import redirect, render
-
+from django.http import JsonResponse
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
@@ -175,6 +175,8 @@ def offre_detail(request, offre_id):
     }
 
     return render(request, 'offres_emploi/offre_detail.html', context)
+
+
 def liste_offres_emploi(request):
     print("Contenu de la session :", request.session.items())  # Débogage
     token = request.session.get("accessToken")
@@ -834,6 +836,8 @@ def profile_view_candidat(request):
     
 
 
+from django.core.paginator import Paginator
+
 def profile_view_pme(request):
     access_token = request.session.get("accessToken")
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -851,5 +855,166 @@ def profile_view_pme(request):
     
     else :
         return render(request, 'dashboardCan_templates/profil.html', {"erreur" :"Shit neggae"})
+    
+
+## A revoir pour plus tard
+
+def offres_emploi_can(request):
+    """Affiche la liste des offres d'emploi actives pour les candidats"""
+    access_token = request.session.get("accessToken")
+    
+    if not access_token:
+        messages.error(request, "Vous devez être connecté pour accéder aux offres d'emploi")
+        return render(request, 'main_app/offres_emploi_can.html', {
+            'offres': [],
+            'title': 'Accès non autorisé',
+            'nombre_offres': 0,
+        })
+
+    try:
+        # Appel à l'API backend avec authentification
+        api_url = "http://127.0.0.1:8001/api/candidat/offres/"
+        headers = {
+            "Authorization": f"Bearer {access_token}"
+        }
+        
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        
+        data = response.json()
+        offres = data.get('results', [])
+        
+        # Filtrage des offres actives
+        offres_actives = [offre for offre in offres if offre.get('est_actif', False)]
+        
+        # Pagination
+        paginator = Paginator(offres_actives, 6)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        context = {
+            'offres': page_obj,
+            'title': 'Offres d\'emploi disponibles',
+            'nombre_offres': data.get('count', len(offres_actives)),
+            'page_obj': page_obj,
+        }
+        
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 401:
+            messages.error(request, "Session expirée. Veuillez vous reconnecter.")
+        else:
+            messages.error(request, f"Erreur serveur: {str(e)}")
+        
+        context = {
+            'error': f"Erreur d'authentification: {str(e)}",
+            'offres': [],
+            'title': 'Erreur de chargement',
+            'nombre_offres': 0,
+        }
+    
+    except requests.exceptions.RequestException as e:
+        messages.error(request, f"Erreur de connexion au serveur: {str(e)}")
+        context = {
+            'error': f"Impossible de se connecter au serveur: {str(e)}",
+            'offres': [],
+            'title': 'Erreur de connexion',
+            'nombre_offres': 0,
+        }
+    
+    return render(request, 'dashboardCan_templates/offres_emploi_can.html', context)
+
+
+def offre_detail_candidat(request, offre_id):
+    """Vue spécifique pour les candidats"""
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les détails.")
+        return redirect("login_page")
+
+    api_url = f"http://127.0.0.1:8001/api/candidat/offres/{offre_id}/"
+    offre = {}
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+        
+        offre = response.json()
+        # Formatage de la date si nécessaire
+        if 'date_publication' in offre:
+            date_obj = datetime.strptime(offre['date_publication'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            offre['date_publication'] = date_obj.strftime('%d/%m/%Y %H:%M')
+
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 404:
+            error_message = "Cette offre n'existe pas ou a été supprimée"
+        else:
+            error_message = f"Erreur serveur: {e}"
+        print(f"Erreur API (candidat): {e}")
+
+    context = {
+        'offre': offre,
+        'error_message': error_message,
+        'titre_page': f"Détails de l'offre - {offre.get('titre', 'Inconnue')}"
+    }
+    
+    return render(request, 'dashboardCan_templates/offre_detail.html', context)
+
+
+def postuler_offre(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Veuillez vous connecter pour postuler.'}, status=401)
+        messages.warning(request, "Veuillez vous connecter pour postuler.")
+        return redirect("login_page")
+
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Vérifier les candidatures existantes
+    check_url = f"http://127.0.0.1:8001/api/candidat/applications/?offre={offre_id}"
+    check_response = requests.get(check_url, headers=headers)
+    
+    if check_response.status_code == 200 and len(check_response.json().get('results', [])) > 0:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Vous avez déjà postulé à cette offre'}, status=400)
+        messages.warning(request, "Vous avez déjà postulé à cette offre")
+        return redirect('offre_detail_candidat', offre_id=offre_id)
+    
+    # Envoyer la candidature
+    api_url = "http://127.0.0.1:8001/api/candidat/applications/"
+    data = {"offre": offre_id}
+    
+    try:
+        response = requests.post(api_url, json=data, headers=headers)
+        
+        if response.status_code == 201:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+            messages.success(request, "Votre candidature a bien été enregistrée !")
+        else:
+            error = response.json().get('detail', 'Échec de la candidature')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': error}, status=400)
+            messages.error(request, f"Erreur: {error}")
+            
+    except requests.exceptions.RequestException as e:
+        error = f"Erreur de connexion: {str(e)}"
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': error}, status=500)
+        messages.error(request, error)
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': 'Requête invalide'}, status=400)
+    return redirect('offre_detail_candidat', offre_id=offre_id)
+
+
+
+def telecharger_offre(request):
+    """Vue temporaire en attendant l'implémentation complète"""
+    # TODO: À implémenter par [nom du collègue]
+    context = {}  # contexte vide pour l'instant
+    return render(request, 'main_app/offres_emploi_can.html', context)
         
         
