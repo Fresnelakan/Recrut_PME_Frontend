@@ -1,425 +1,285 @@
-{% load static %} {# Toujours utile si tu as d'autres ressources statiques comme des images, même si ici la photo de profil est une placeholder URL #}
+{% extends "base1.html" %}
+{% load static %}
 
+{% block content %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Votre Profil (Modifiable)</title>
+    <title>Votre Profil - Candidat</title>
     <style>
-        /* CSS intégré pour le style de la carte de profil */
+        /* Vos styles CSS restent les mêmes */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f8; /* Fond gris très clair */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Aligner en haut pour permettre le défilement */
+            align-items: flex-start;
             min-height: 100vh;
             padding: 20px;
+            margin: 0;
             box-sizing: border-box;
         }
 
         .container {
-            background-color: #ffffff; /* Fond blanc de la carte */
-            border-radius: 10px; /* Coins arrondis */
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); /* Ombre douce */
-            width: 90%; /* Largeur relative */
-            max-width: 900px; /* Largeur maximale fixe */
-            display: grid;
-            grid-template-columns: 1fr 2fr; /* Layout en deux colonnes: 1/3 à gauche, 2/3 à droite */
-            gap: 20px; /* Espacement entre les colonnes */
-            padding: 30px; /* Padding interne */
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            padding: 32px;
+            margin: 20px auto;
             box-sizing: border-box;
         }
 
-        /* Styles pour les sections de gauche (Profil et Réseaux Sociaux) */
-        .profile-info, .social-links, .upload-cv-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Centrer le contenu horizontalement */
-            padding: 20px;
+        .alert {
+            padding: 16px;
+            margin-bottom: 24px;
             border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Petite ombre pour chaque section */
-            text-align: center; /* Centrer le texte dans ces blocs */
-            margin-bottom: 20px; /* Espacement entre les blocs de la colonne de gauche */
-        }
-
-        .profile-info {
-            margin-bottom: 20px; /* Espacement entre info profil et réseaux sociaux */
-        }
-
-        .profile-image-container {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%; /* Image circulaire */
-            overflow: hidden;
-            margin-bottom: 15px;
-            border: 2px solid #ddd; /* Bordure autour de l'image */
-        }
-
-        .profile-image {
+            font-size: 0.9em;
             width: 100%;
-            height: 100%;
-            object-fit: cover; /* S'assurer que l'image remplit le conteneur */
-        }
-
-        .user-name {
-            font-size: 1.5em; /* Grande taille de police pour le nom */
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .placeholder-text {
-            font-size: 0.9em;
-            color: #777; /* Couleur de texte plus claire */
-            margin-bottom: 15px;
-        }
-
-        .profile-actions {
-            display: flex;
-            gap: 10px; /* Espacement entre les boutons */
-            margin-bottom: 20px;
-        }
-
-        .follow-button {
-            background-color: #3b82f6; /* Bleu vif */
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s ease;
-        }
-
-        .follow-button:hover {
-            background-color: #2563eb; /* Bleu plus foncé au survol */
-        }
-
-        .message-button {
-            background-color: #e5e7eb; /* Gris clair */
-            color: #555;
-            border: 1px solid #d1d5db; /* Bordure grise */
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-
-        .message-button:hover {
-            background-color: #d4d6da;
-            border-color: #b3b6b9;
-        }
-
-        .social-links h3, .upload-cv-section h3 {
-            font-size: 1.1em;
-            color: #555;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-weight: normal;
-            text-align: left; /* Aligner le titre à gauche dans ce bloc */
-            width: 100%; /* S'assurer qu'il prend toute la largeur */
-        }
-
-        .social-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            color: #333;
-            text-decoration: none;
-            width: 100%; /* S'assurer que le lien prend toute la largeur */
-            justify-content: flex-start; /* Aligner le contenu du lien à gauche */
-        }
-
-        .social-link:hover {
-            color: #007bff; /* Changement de couleur au survol */
-        }
-
-        .social-icon {
-            font-size: 1.2em;
-            color: #777; /* Couleur de l'icône */
-            min-width: 20px; /* Pour aligner les textes */
             text-align: center;
         }
-        .social-value {
-            color: #777; /* Couleur du texte ID social */
-            margin-left: auto; /* Pousser la valeur à l'extrême droite */
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #f87171;
+        }
+        .alert-info {
+            background-color: #e0f2fe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
         }
 
-        /* Styles pour le contenu principal à droite (Contact Info, Skills) */
-        .main-content {
+        .profile-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .profile-header h1 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        .profile-header p {
+            font-size: 1em;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+
+        .profile-form {
             display: flex;
             flex-direction: column;
-            gap: 20px; /* Espacement entre les sections de droite */
+            gap: 20px;
         }
 
-        .contact-info, .skills-section {
-            padding: 20px;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        .form-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .form-section h2 {
+            font-size: 1.4em;
+            font-weight: 500;
+            color: #374151;
+            margin: 0 0 20px;
         }
 
-        .contact-info {
-            /* Pas de changement de taille spécifique ici, le grid auto s'adaptera */
-        }
-
-        .contact-info h2 {
-            font-size: 1.3em;
-            color: #555;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-weight: normal;
-        }
-
-        .info-row {
+        .form-row {
             display: grid;
-            grid-template-columns: 1fr 2fr; /* Label à gauche, champ à droite */
-            margin-bottom: 10px;
+            grid-template-columns: 120px 1fr;
             align-items: center;
-            gap: 10px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
-
-        .info-label {
-            font-weight: bold;
-            color: #555;
+        .form-label {
+            font-weight: 500;
+            color: #4b5563;
             font-size: 0.95em;
         }
-
-        .info-value-field { /* Nouveau style pour les champs de saisie */
+        .form-input {
             width: 100%;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border: 1px solid #d1d5db;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 0.95em;
-            box-sizing: border-box; /* Inclure padding et border dans la largeur */
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
         }
-        .info-value-field:focus {
+        .form-input:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .form-input:required:invalid:not(:focus) {
+            border-color: #ef4444;
         }
 
-        .skills-section h3 {
-            background-color: #e5e7eb; /* Fond gris pour le titre de section */
-            color: #555;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 1em;
-            margin-bottom: 15px;
-            font-weight: normal;
-            display: inline-block; /* Pour que le background ne prenne que la largeur du texte */
-        }
-
-        .skill-bar {
-            background-color: #f3f4f6; /* Fond de la barre de progression (gris clair) */
-            border-radius: 5px;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-
-        .skill-progress {
-            background-color: #3b82f6; /* Couleur de la progression (bleu) */
-            height: 10px;
-            border-radius: 5px;
-            /* La largeur sera définie inline via Django pour des valeurs dynamiques */
-        }
-
-        .skill-label {
-            display: flex;
-            justify-content: space-between; /* Pour que le label et le pourcentage soient séparés */
-            margin-bottom: 5px;
-            color: #333;
-            font-size: 0.9em;
-        }
-
-        /* Bouton d'enregistrement */
-        .save-button {
-            background-color: #28a745; /* Vert pour enregistrer */
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            margin-top: 20px; /* Espacement au-dessus du bouton */
-            transition: background-color 0.2s ease;
-            width: fit-content; /* S'adapte au contenu */
-            align-self: flex-end; /* Aligner à droite dans le flex container main-content */
-        }
-        .save-button:hover {
-            background-color: #218838;
-        }
-
-        /* Styles pour l'upload de CV */
         .cv-upload-group {
-            width: 100%;
-            text-align: left; /* Aligner les éléments à gauche */
-            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         .cv-upload-group label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #555;
+            font-weight: 500;
+            color: #4b5563;
             font-size: 0.95em;
         }
         .cv-upload-input-container {
             display: flex;
-            gap: 10px;
             align-items: center;
+            gap: 12px;
         }
         .cv-upload-input-container input[type="file"] {
-            display: none; /* Cache l'input file par défaut */
+            display: none;
         }
         .custom-file-upload {
-            background-color: #e0e0e0;
-            color: #333;
-            padding: 8px 15px;
-            border-radius: 5px;
+            background: #e5e7eb;
+            color: #374151;
+            padding: 10px 16px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s;
         }
         .custom-file-upload:hover {
-            background-color: #c9c9c9;
+            background: #d1d5db;
         }
         .cv-file-name {
-            color: #777;
+            color: #6b7280;
             font-size: 0.9em;
-            flex-grow: 1; /* Permet au nom du fichier de prendre l'espace restant */
+            flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* Ajoute des points de suspension si le texte est trop long */
+            text-overflow: ellipsis;
+        }
+        .cv-current {
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: #4b5563;
+        }
+        .cv-current a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .cv-current a:hover {
+            text-decoration: underline;
         }
 
+        .submit-button {
+            background: #10b981;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            align-self: flex-end;
+        }
+        .submit-button:hover {
+            background: #059669;
+        }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .container {
-                grid-template-columns: 1fr; /* Une seule colonne sur petits écrans */
                 padding: 20px;
             }
-            .profile-info, .social-links, .contact-info, .skills-section, .upload-cv-section {
-                padding: 15px; /* Réduire le padding sur petits écrans */
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
             }
-            .info-row {
-                grid-template-columns: 1fr; /* Les labels et champs s'empilent sur petits écrans */
-            }
-            .save-button {
-                width: 100%; /* Le bouton prend toute la largeur sur petits écrans */
+            .submit-button {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div> {# Ceci est un conteneur pour empiler les blocs de gauche #}
-            <div class="profile-info">
-                {# Photo de profil - Utilisation d'un placeholder pour l'exemple #}
+        {% if success_message %}
+            <div class="alert alert-success">{{ success_message }}</div>
+        {% endif %}
+        {% if error_message %}
+            <div class="alert alert-danger">{{ error_message|safe }}</div>
+        {% endif %}
+        {% if info_message %}
+            <div class="alert alert-info">{{ info_message }}</div>
+        {% endif %}
+
+        <div class="profile-header">
+            <h1>{% if profile_exists %}Créer Votre Profil{% else %}Créer Votre Profil{% endif %}</h1>
+            <p>{% if profile_exists %}Mettez à jour vos informations ci-dessous.{% else %}Remplissez vos informations pour commencer.{% endif %}</p>
+        </div>
+
+        <form method="post" class="profile-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-section">
+                <h2>Informations Personnelles</h2>
+                <div class="form-row">
+                    <div class="form-label">Nom Complet</div>
+                    <input type="text" name="nom_complet" class="form-input" value="{{ profile_data.nom_complet|default:'' }}" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">Email</div>
+                    <input type="email" name="email" class="form-input" value="{{ profile_data.email|default:'' }}" required>
+                </div>
+                {# Les champs Téléphone, Adresse, Pays sont retirés #}
                 
-                {# Nom d'utilisateur et texte d'accroche #}
-                <h2 class="user-name">{% if profile.username %}{{ profile.username }}{% else %}Mon profil{% endif %}</h2>
-                
-                {# Boutons Follow et Message (statiques pour cet exemple) #}
-                <div class="profile-actions">
-                    
+                <div class="form-row">
+                    <div class="form-label">Description</div>
+                    <textarea name="description" class="form-input" rows="5">{{ profile_data.description|default:'' }}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">Votre CV</div>
+                    <div class="cv-upload-group">
+                        <div class="cv-upload-input-container">
+                            <input type="file" id="cvFile" name="cv" accept=".pdf,.doc,.docx" onchange="updateCvFileName(event)">
+                            <label for="cvFile" class="custom-file-upload">Choisir un fichier</label>
+                            <span id="cvFileName" class="cv-file-name">
+                                {# Afficher le nom de fichier existant ou "Aucun fichier choisi" #}
+                                {% if profile_data.cv_filename %}
+                                    Fichier actuel : {{ profile_data.cv_filename }}
+                                {% else %}
+                                    Aucun fichier choisi
+                                {% endif %}
+                            </span>
+                        </div>
+                        {# Afficher le lien vers le CV actuel s'il existe #}
+                        {% if profile_data.cv %}
+                            <p class="cv-current">CV actuel : <a href="{{ profile_data.cv }}" target="_blank">Voir le CV</a></p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-
-            {% comment %} <div class="social-links">
-                <h3>Réseaux Sociaux</h3>
-                <a href="{{ profile.website_url|default:'#' }}" class="social-link">
-                    <span class="social-icon">🌐</span> Website
-                    <span class="social-value">{{ profile.website_display|default:'MonSite.com' }}</span>
-                </a>
-                <a href="{{ profile.twitter_url|default:'#' }}" class="social-link">
-                    <span class="social-icon">🐦</span> Twitter
-                    <span class="social-value">{{ profile.twitter_display|default:'@MonTwitter' }}</span>
-                </a>
-                <a href="{{ profile.facebook_url|default:'#' }}" class="social-link">
-                    <span class="social-icon">f</span> Facebook
-                    <span class="social-value">{{ profile.facebook_display|default:'MonFacebookID' }}</span>
-                </a>
-                <a href="{{ profile.instagram_url|default:'#' }}" class="social-link">
-                    <span class="social-icon">📷</span> Instagram
-                    <span class="social-value">{{ profile.instagram_display|default:'@MonInstagram' }}</span>
-                </a>
-            </div> {% endcomment %}
-
-            {# Nouveau Cadran pour l'upload de CV #}
-            <div class="upload-cv-section">
-                <h3>Téléverser votre CV</h3>
-                <form method="post" enctype="multipart/form-data" action="{% url 'mise_a_jour_cv' %}"> {# Remplace 'votre_url_de_mise_a_jour_cv' par l'URL réelle #}
-                    {% csrf_token %}
-                    <div class="cv-upload-group">
-                        <label for="cvFile">Sélectionnez un fichier CV (PDF, DOCX)</label>
-                        <div class="cv-upload-input-container">
-                            <input type="file" id="cvFile" name="cv_file" accept=".pdf,.doc,.docx" onchange="updateCvFileName(event)">
-                            <label for="cvFile" class="custom-file-upload">Choisir un fichier</label>
-                            <span id="cvFileName" class="cv-file-name">{% if profile.cv_filename %}{{ profile.cv_filename }}{% else %}Aucun fichier choisi{% endif %}</span>
-                        </div>
-                        {% if profile.cv_url %}
-                            <p style="font-size:0.85em; color:#555; margin-top:10px;">CV actuel : <a href="{{ profile.cv_url }}" target="_blank" style="color:#3b82f6; text-decoration:none;">Voir le CV</a></p>
-                        {% endif %}
-                        <button type="submit" class="save-button" style="margin-top:20px; align-self: flex-start;">Enregistrer le CV</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <form method="post" action="{% url 'mise_a_jour_profil' %}"> {# Remplace 'votre_url_de_mise_a_jour_profil' par l'URL réelle #}
-                {% csrf_token %}
-                <div class="contact-info">
-                    <h2>Informations </h2>
-                    <div class="info-row">
-                        <div class="info-label">Nom Complet</div>
-                        <input type="text" name="full_name" class="info-value-field" value="{% if profile.full_name %}{{ profile.full_name }}{% else %}Nom Prénom{% endif %}">
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Email</div>
-                        <input type="email" name="email" class="info-value-field" value="{% if profile.email %}{{ profile.email }}{% else %}exemple@domaine.com{% endif %}">
-                    </div>
-                    {% comment %} <div class="info-row">
-                        <div class="info-label">Téléphone</div>
-                        <input type="text" name="phone" class="info-value-field" value="{% if profile.phone %}{{ profile.phone }}{% else %}+123 456 7890{% endif %}">
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Mobile</div>
-                        <input type="text" name="mobile" class="info-value-field" value="{% if profile.mobile %}{{ profile.mobile }}{% else %}+123 456 7890{% endif %}">
-                    </div> {% endcomment %}
-                    <div class="info-row">
-                        <div class="info-label">Adresse</div>
-                        <input type="text" name="address" class="info-value-field" value="{% if profile.address %}{{ profile.address }}{% else %} Ville, Pays{% endif %}">
-                    </div>
-                
-                    <div class="info-row">
-                        <div class="info-label">Role</div>
-                        <input type="text" name="role" class="info-value-field" value="{% if profile.address %}{{ profile.address }}{% else %} Candidat{% endif %}">
-                    </div>
-
-                
-                {# Bouton d'enregistrement pour les informations de contact et compétences #}
-                <button type="submit" class="save-button">Enregistrer les modifications</button>
-            </form>
-        </div>
+            <button type="submit" class="submit-button">{% if profile_exists %}Enregistrer{% else %}Enregistrer{% endif %}</button>
+        </form>
     </div>
 
     <script>
         function updateCvFileName(event) {
             const fileNameSpan = document.getElementById('cvFileName');
             if (event.target.files.length > 0) {
-                fileNameSpan.textContent = event.target.files[0].name;
+                fileNameSpan.textContent = "Fichier sélectionné : " + event.target.files[0].name;
             } else {
-                fileNameSpan.textContent = "{% if profile.cv_filename %}{{ profile.cv_filename }}{% else %}Aucun fichier choisi{% endif %}";
+                // Si aucun nouveau fichier n'est choisi, revenir à l'affichage du nom de fichier existant ou "Aucun fichier choisi"
+                const existingCvFileName = "{{ profile_data.cv_filename|default:'' }}";
+                if (existingCvFileName) {
+                    fileNameSpan.textContent = "Fichier actuel : " + existingCvFileName;
+                } else {
+                    fileNameSpan.textContent = "Aucun fichier choisi";
+                }
             }
         }
     </script>
 </body>
 </html>
+{% endblock content %}

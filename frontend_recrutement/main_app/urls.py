@@ -21,9 +21,14 @@ urlpatterns = [
     path('offres-emploi-can/', views.offres_emploi_can, name='offres_emploi_can'),
     path('offre-candidat/<int:offre_id>/', views.offre_detail_candidat, name='offre_detail_candidat'),
     path('postuler-offre/<int:offre_id>/', views.postuler_offre, name='postuler_offre'),
+    path('offres/supprimer/<int:offre_id>/', views.supprimer_offre, name='supprimer_offre'),
+    path('candidatures/', views.liste_candidatures_candidat, name='liste_candidatures_candidat'),
     
     path('telecharger-offre/<int:offre_id>/', views.telecharger_offre, name='telecharger_offre'),
     path('offre-detail/<int:offre_id>/', views.offre_detail, name='offre_detail'),
     path("profile-candidat/", views.profile_view_candidat, name="profile-candidat"),
-   
+    #a supprimer maybe
+    path('profil/candidat/', views.profile_candidat_view, name='profil_candidat'),
+    path('profil/candidat/update/', views.update_profil_candidat, name='update_profil_candidat'),
+    path('profil/candidat/upload-cv/', views.upload_cv_candidat, name='upload_cv_candidat'),
 ]

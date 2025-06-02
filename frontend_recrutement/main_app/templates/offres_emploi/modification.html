@@ -27,20 +27,20 @@
         padding: 15px;
         margin-bottom: 20px;
         background-color: #f9f9f9;
-        display: flex; /* Utilisation de flexbox pour aligner contenu et boutons */
-        justify-content: space-between; /* Contenu à gauche, boutons à droite */
-        align-items: flex-start; /* Alignement vertical */
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
         transition: box-shadow 0.3s ease;
     }
     .offre:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .offre-content {
-        flex: 1; /* Le contenu prend l'espace restant */
+        flex: 1;
     }
     .offre h3 {
         margin-top: 0;
-        color: #333; /* Couleur sombre pour correspondre à la capture */
+        color: #333;
         font-size: 18px;
         font-weight: bold;
     }
@@ -49,66 +49,149 @@
     }
     .offre strong {
         display: inline-block;
-        width: 120px;
-        color: #388e3c;
+        color: #388e3c; /* Couleur verte pour les libellés importants */
         font-weight: bold;
     }
     .offre .date {
-        color: #666;
-        font-style: italic;
-        margin-bottom: 10px;
+        color: #666; /* Couleur par défaut si on veut que le texte de la date reste gris */
     }
-    .offre .description {
-        margin-top: 10px;
-        border-top: 1px dashed #eee;
-        padding-top: 10px;
-        font-size: 0.95em;
-        line-height: 1.5;
-        color: #555;
+    /* Nouveau style pour le libellé de la date */
+    .offre .date-label {
+        color: #388e3c; /* Couleur verte */
+        font-weight: bold;
     }
-    .action-buttons {
+    .offre-actions {
+        margin-left: 20px;
         display: flex;
-        flex-direction: column; /* Boutons empilés verticalement */
-        gap: 10px; /* Espacement entre les boutons */
+        flex-direction: column;
+        gap: 10px;
     }
-    .voir-plus-btn, .modifier-btn {
-        padding: 8px 16px;
-        color: #fff;
+    .btn {
+        display: inline-block;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
         text-decoration: none;
-        border-radius: 20px; /* Boutons arrondis */
+        text-align: center;
         font-size: 14px;
         font-weight: bold;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ombre légère */
+        transition: background-color 0.3s ease;
     }
-    .voir-plus-btn {
-        background-color: #007bff; /* Bleu */
+    .btn-primary {
+        background-color: #007bff;
+        color: #fff;
     }
-    .voir-plus-btn:hover {
+    .btn-primary:hover {
         background-color: #0056b3;
-        transform: translateY(-2px); /* Effet de soulèvement au survol */
     }
-    .modifier-btn {
-        background-color: #28a745; /* Vert */
+    .btn-secondary {
+        background-color: #6c757d;
+        color: #fff;
     }
-    .modifier-btn:hover {
-        background-color: #218838;
-        transform: translateY(-2px);
+    .btn-secondary:hover {
+        background-color: #5a6268;
     }
-    .no-offers {
+    .btn-danger {
+        background-color: #dc3545;
+        color: #fff;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+    /* Styles pour le conteneur de messages - Positionnement et Z-index */
+    .message-container {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1050;
+        max-width: 300px;
+    }
+    .alert {
+        padding: 10px 20px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        word-wrap: break-word;
+    }
+    .alert.show {
+        opacity: 1;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Styles pour la modale de confirmation */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 25px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 400px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px 0 rgba(0,0,0,0.3), 0 6px 20px 0 rgba(0,0,0,0.25);
         text-align: center;
-        color: #666;
-        font-size: 16px;
+        position: relative;
     }
-    .back-link {
-        display: block;
-        text-align: center;
+
+    .modal-content h3 {
+        margin-top: 0;
+        color: #333;
+        font-size: 1.2em;
+    }
+
+    .modal-buttons {
         margin-top: 20px;
-        text-decoration: none;
-        color: #007bff;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
     }
-    .back-link:hover {
-        text-decoration: underline;
+
+    .modal-buttons .btn {
+        min-width: 100px;
+    }
+
+    /* Style du bouton "Annuler" dans la modale */
+    .modal-buttons .btn-secondary {
+        background-color: #6c757d;
+        color: #fff;
+    }
+    .modal-buttons .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+    /* Style du bouton "Confirmer" (rouge) dans la modale */
+    .modal-buttons .btn-danger {
+        background-color: #dc3545;
+        color: #fff;
+    }
+    .modal-buttons .btn-danger:hover {
+        background-color: #c82333;
     }
 </style>
 {% endblock style %}
@@ -116,27 +199,143 @@
 {% block content %}
 <div class="container">
     <h1>{{ titre_page }}</h1>
+
+    <div class="message-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert" data-timeout="3000">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
     {% if error_message %}
-        <p style="color: red;">{{ error_message }}</p>
+        <div class="alert alert-danger" role="alert">
+            {{ error_message }}
+        </div>
     {% endif %}
+
     {% if offres %}
         {% for offre in offres %}
-            <div class="offre">
+            <div class="offre" id="offre-{{ offre.id }}">
                 <div class="offre-content">
-                    <h3>{{ offre.titre }}</h3> <!-- Titre non cliquable -->
-                    <p><strong>Entreprise :</strong> {{ offre.entreprise.nom }}</p>
-                    <p class="date"><strong>Publié le :</strong> {{ offre.date_publication }}</p>
-                    <div class="description"><strong>Description :</strong> {{ offre.description }}</div>
+                    <h3>{{ offre.titre }}</h3>
+                    <p><strong>Description:</strong> {{ offre.description|truncatechars:250 }}</p>
+                    <p class="date">
+                        <span class="date-label">Publiée le :</span> {{ offre.date_publication_formatee }}
+                    </p>
                 </div>
-                <div class="action-buttons">
-                    
-                    <a href="{% url 'modifier_offre' offre.id %}" class="modifier-btn">Modifier</a>
+                <div class="offre-actions">
+                    <a href="{% url 'modifier_offre' offre.id %}" class="btn btn-primary">Modifier</a>
+                    <button type="button" class="btn btn-danger delete-button" data-offre-id="{{ offre.id }}">Supprimer l'offre</button>
                 </div>
             </div>
         {% endfor %}
     {% else %}
-        <p class="no-offers">Aucune offre d'emploi disponible.</p>
+        <p>Aucune offre d'emploi disponible pour le moment.</p>
     {% endif %}
-    <a href="{% url 'dashboard' %}" class="back-link">Retour</a>
 </div>
+
+<div id="deleteConfirmationModal" class="modal">
+    <div class="modal-content">
+        <h3>Confirmer la suppression</h3>
+        <p>Êtes-vous sûr de vouloir supprimer cette offre ? Cette action est irréversible.</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Annuler</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Confirmer la suppression</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.delete-button');
+        const modal = document.getElementById('deleteConfirmationModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        let currentOffreId = null;
+
+        function showMessage(type, text) {
+            const messageContainer = document.querySelector('.message-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.classList.add('alert', `alert-${type}`);
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = text;
+            messageContainer.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                alertDiv.addEventListener('transitionend', () => alertDiv.remove());
+            }, 3000);
+        }
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentOffreId = this.dataset.offreId;
+                modal.style.display = 'flex';
+            });
+        });
+
+        cancelDeleteBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            currentOffreId = null;
+        });
+
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (currentOffreId) {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(`/offres/supprimer/${currentOffreId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || 'Erreur lors de la suppression.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showMessage('success', data.message);
+                        const offreElement = document.getElementById(`offre-${currentOffreId}`);
+                        if (offreElement) {
+                            offreElement.remove();
+                        }
+                    } else {
+                        showMessage('danger', data.message || 'La suppression a échoué.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showMessage('danger', `Erreur lors de la suppression de l'offre: ${error.message || error}`);
+                })
+                .finally(() => {
+                    modal.style.display = 'none';
+                    currentOffreId = null;
+                });
+            }
+        });
+
+        const initialMessages = document.querySelectorAll('.message-container .alert');
+        initialMessages.forEach(message => {
+            message.classList.add('show');
+            const timeout = parseInt(message.dataset.timeout || 3000);
+            setTimeout(() => {
+                message.classList.remove('show');
+                message.addEventListener('transitionend', () => message.remove());
+            }, timeout);
+        });
+    });
+</script>
 {% endblock content %}

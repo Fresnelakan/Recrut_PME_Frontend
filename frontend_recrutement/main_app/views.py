@@ -1,10 +1,14 @@
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 
+from datetime import datetime
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 import os
 import requests
+from django.shortcuts import render
+from django.conf import settings 
+
 def index(request):
     return render(request, 'index.html')
 
@@ -16,9 +20,7 @@ from django.contrib import messages
 API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"  # remplace cette URL par l’URL réelle de ton API
 
 
-import requests
-from django.shortcuts import render
-from django.conf import settings # Importer settings
+
 
 def offres_emploi(request):
     offres = []
@@ -216,7 +218,7 @@ def liste_offres(request):
     token = request.session.get("accessToken")
     if not token:
         messages.warning(request, "Veuillez vous connecter pour voir les offres.")
-        return redirect("login_page")  # Utilisez 'login_page' comme dans creer_offre_emploi
+        return redirect("login_page")
 
     api_url = "http://127.0.0.1:8001/api/pme/offres/"
     offres = []
@@ -228,18 +230,48 @@ def liste_offres(request):
         response.raise_for_status()
 
         data = response.json()
-        print("Données de l'API :", data)  # Débogage
+        print("Données de l'API brutes:", data) # Débogage pour voir la date brute
         if isinstance(data, dict) and 'results' in data:
-            offres = data.get('results', [])
+            offres_brutes = data.get('results', [])
         else:
-            offres = data
+            offres_brutes = data
+
+        # --- Traitement des offres pour formater la date ---
+        for offre in offres_brutes:
+            if 'date_publication' in offre and offre['date_publication']:
+                try:
+                    # Parse la chaîne ISO 8601 avec les microsecondes et le 'Z'
+                    # fromisoformat gère très bien ce format
+                    # .replace('Z', '+00:00') est une astuce si fromisoformat rencontre des problèmes avec 'Z' direct
+                    # Ou utiliser dateutil.parser.isoparse si installé (pip install python-dateutil)
+                    # Pour Python 3.7+, datetime.fromisoformat gère le 'Z' si l'API est stricte.
+                    # Si non, on peut faire un strip('Z') puis ajouter '+00:00'
+                    date_str = offre['date_publication'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+
+                    # Optionnel: convertir au fuseau horaire local si USE_TZ = True dans settings.py
+                    # from django.utils import timezone
+                    # date_obj = timezone.localtime(date_obj)
+
+                    # Formate la date comme souhaité : "JJ-MM-AAAA à HH:MM:SS"
+                    offre['date_publication_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour {offre.get('titre')}: {offre['date_publication']} - {ve}")
+                    offre['date_publication_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour {offre.get('titre')}: {e}")
+                    offre['date_publication_formatee'] = "Erreur de date"
+            else:
+                offre['date_publication_formatee'] = "Non spécifiée"
+            offres.append(offre) # Ajoute l'offre traitée à la liste finale
+        # --- Fin du traitement ---
 
     except requests.exceptions.RequestException as e:
         error_message = f"Impossible de récupérer les offres depuis le backend : {e}"
         print(f"Erreur lors de l'appel API pour la liste des offres : {e}")
 
     context = {
-        'offres': offres,
+        'offres': offres, # C'est maintenant la liste des offres AVEC la date formatée
         'error_message': error_message,
         'titre_page': "Liste des Offres d'Emploi",
     }
@@ -774,65 +806,134 @@ def profile_view_candidat(request):
 
     # Si la requête n'est ni GET ni POST, ou si POST n'est pas géré 
     return render(request, 'dashboardCan_templates/profil.html', {"profile": profile_data})
+
        
 def profile_view_candidat(request):
     access_token = request.session.get("accessToken")
+
+    # Rediriger si l'utilisateur n'est pas connecté
+    if not access_token:
+        messages.warning(request, "Veuillez vous connecter pour voir ou créer votre profil.")
+        return redirect('login_view') 
+
     headers = {"Authorization": f"Bearer {access_token}"}
-    
-    
-    
-    # if request.method == "POST":
-    #     # Récupération des données
-    #     nom_complet = request.POST.get("name")
-    #     email = request.POST.get("email")
-    #     role = request.POST.get("role")
-    #     # cv_file = request.FILES.get("cv")  # attention : request.FILES pour les fichiers !
+    profile_data = {} 
+    profile_exists = False 
 
-    #     # Préparation des données et fichiers
-    #     data = {
-    #         "name": nom_complet,
-    #         "email": email,
-    #         "role": role,
-    #     }
+    context = {
+        'titre_page': "Mon Profil Candidat",
+        'profile_data': {}, 
+        'error_message': None,
+        'success_message': None,
+        'info_message': None, # Ce sera le message affiché en cas de profil déjà existant
+        'profile_exists': False, 
+    }
 
-        
+    # --- Tenter de récupérer le profil existant (pour les requêtes GET) ---
+    try:
+        response_get = requests.get(CANDIDAT_PROFILE_API_URL, headers=headers)
+        if response_get.status_code == 200:
+            profile_data = response_get.json()
+            profile_exists = True
+            context['profile_exists'] = True 
+            # context['info_message'] = "Vous avez déjà un profil. Vous pouvez le modifier ci-dessous."
+            if 'cv' in profile_data and profile_data['cv']:
+                profile_data['cv_filename'] = os.path.basename(profile_data['cv'])
+        elif response_get.status_code == 404:
+            profile_exists = False
+            context['profile_exists'] = False 
+            context['info_message'] = "Vous n'avez pas encore de profil. Veuillez en créer un."
+        else:
+            error_message = f"Erreur lors de la récupération du profil: {response_get.status_code} - {response_get.text}"
+            if response_get.status_code == 401:
+                request.session.pop("accessToken", None) 
+                messages.error(request, "Votre session a expiré ou est invalide. Veuillez vous reconnecter.")
+                return redirect('login_view')
+            context['error_message'] = error_message
+            context['profile_data'] = profile_data 
+            return render(request, 'dashboardCan_templates/profil.html', context)
 
-        # Envoi de la requête POST en multipart/form-data
-        # response = requests.put(
-        #     "http://127.0.0.1:8001/api/profile/",
-        #     data=data,
+    except requests.exceptions.ConnectionError:
+        context['error_message'] = "Impossible de se connecter à l'API du profil. Veuillez vérifier que le backend est en cours d'exécution."
+        context['profile_data'] = profile_data 
+        return render(request, 'dashboardCan_templates/profil.html', context)
+    except Exception as e:
+        context['error_message'] = f"Vous avez deja un profil "
+        context['profile_data'] = profile_data 
+        return render(request, 'dashboardCan_templates/profil.html', context)
+
+    context['profile_data'] = profile_data
+
+    # --- Gérer la soumission du formulaire (requêtes POST) ---
+    if request.method == "POST":
+        form_data = {
+            "nom_complet": request.POST.get("nom_complet", ""),
+            "email": request.POST.get("email", ""),
+            "description": request.POST.get("description", ""),
             
-        #     headers=headers  # Ajoutez un token si nécessaire
-        # )
+        }
+        cv_file = request.FILES.get('cv')
 
-        # print(response.status_code)
-        # print(response.json())
-
+        files = {}
+        if cv_file:
+            files['cv'] = (cv_file.name, cv_file.read(), cv_file.content_type)
         
-        # if(response.status_code == 200) :
+        if not cv_file and 'cv_filename' in context['profile_data']:
+            form_data['cv_filename'] = context['profile_data']['cv_filename']
+        elif cv_file:
+            form_data['cv_filename'] = cv_file.name
+
+        try:
+            response = requests.post(CANDIDAT_PROFILE_API_URL, data=form_data, files=files, headers=headers)
             
-        #     profile = response.json()
-        #     print(profile)
-        #     return render(request, 'dashboardCan_templates/profil.html', {"profile" :profile})
-        # else:
-        #     return render(request, 'dashboardCan_templates/profil.html', {"erreur" :"Shit neggae"})
-        
-    
-    
+            action_message = "créé" 
+            if profile_exists or response.status_code == 200:
+                action_message = "mis à jour"
 
-    response = requests.get(
-        "http://127.0.0.1:8001/api/auth/profile/",
-        headers=headers
-    )
-    
-    if(response.status_code == 200):
-        profile = response.json()
-        print(profile)
+            if response.status_code in [200, 201]:
+                profile_data_returned = response.json()
+                if 'cv' in profile_data_returned and profile_data_returned['cv']:
+                    profile_data_returned['cv_filename'] = os.path.basename(profile_data_returned['cv'])
+                context['profile_data'] = profile_data_returned 
+                context['success_message'] = f"Profil {action_message} avec succès !"
+                context['profile_exists'] = True 
+                # Si le profil a été mis à jour, nous réinitialisons info_message pour éviter la redondance
+                context['info_message'] = "Vous avez déjà un profil. Vous pouvez le modifier ci-dessous." if profile_exists else None
+
+            else:
+                error_details = response.json() if response.content else {}
+                validation_errors = []
+                
+                
+                if response.status_code == 400 and "already exists" in response.text.lower():
+                    context['info_message'] = "Vous avez déjà un profil. Veuillez le modifier plutôt que d'essayer d'en créer un nouveau."
+                    context['profile_exists'] = True # On sait qu'un profil existe
+                  
+                    context['info_message'] = "Un profil existe déjà pour cet utilisateur. Veuillez le modifier."
+                    context['profile_exists'] = True
+                # --- FIN NOUVELLE LOGIQUE ---
+                
+                else: # Autres erreurs de validation ou d'API
+                    if isinstance(error_details, dict):
+                        for field, errors in error_details.items():
+                            if field == 'detail':
+                                validation_errors.append(errors)
+                            elif isinstance(errors, list):
+                                validation_errors.append(f"{field.capitalize()}: {' '.join(errors)}")
+                            else:
+                                validation_errors.append(f"{field.capitalize()}: {errors}")
+                    else:
+                        validation_errors.append(str(error_details))
+                    context['error_message'] = "Erreurs de validation : <br>" + "<br>".join(validation_errors)
+                
+                context['profile_data'].update(form_data) 
+                
+        except requests.exceptions.ConnectionError:
+            context['error_message'] = "Impossible de se connecter à l'API pour soumettre le profil."
+        except Exception as e:
+            context['error_message'] = f"Vous avez deja un profil"
         
-        return render(request, 'dashboardCan_templates/profil.html', {"profile" :profile})
-    
-    else :
-        return render(request, 'dashboardCan_templates/profil.html', {"erreur" :"Shit neggae"})
+    return render(request, 'dashboardCan_templates/profil.html', context)
     
 
 
@@ -1010,11 +1111,175 @@ def postuler_offre(request, offre_id):
     return redirect('offre_detail_candidat', offre_id=offre_id)
 
 
+# views.py
+def profile_candidat_view(request):
+    """Récupère le profil candidat"""
+    token = request.session.get("accessToken")
+    if not token:
+        return redirect('login')
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        # Récupération du profil complet
+        response = requests.get(
+            "http://127.0.0.1:8001/api/candidat/profil/candidat/",
+            headers=headers
+        )
+        if response.status_code == 200:
+            return render(request, 'dashboardCan_templates/profil.html', {
+                'profile': response.json()
+            })
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur API: {e}")
+    
+    return render(request, 'dashboardCan_templates/profil.html', {
+        'error_message': "Erreur lors de la récupération du profil"
+    })
+
+def update_profil_candidat(request):
+    """Met à jour les infos du candidat"""
+    if request.method == 'POST':
+        token = request.session.get("accessToken")
+        if not token:
+            return JsonResponse({'error': 'Non authentifié'}, status=401)
+        
+        data = {
+            'nom_complet': request.POST.get('full_name'),
+            'email': request.POST.get('email'),
+            'adresse': request.POST.get('address'),
+            'role': request.POST.get('role')
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            response = requests.post(
+                "http://127.0.0.1:8001/api/candidat/profil/candidat/",
+                json=data,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                return JsonResponse({'success': True})
+            return JsonResponse({'error': response.text}, status=400)
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+
+def upload_cv_candidat(request):
+    """Gère l'upload du CV"""
+    if request.method == 'POST' and request.FILES.get('cv_file'):
+        token = request.session.get("accessToken")
+        if not token:
+            return JsonResponse({'error': 'Non authentifié'}, status=401)
+        
+        cv_file = request.FILES['cv_file']
+        files = {'cv': (cv_file.name, cv_file.read(), cv_file.content_type)}
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        try:
+            response = requests.post(
+                "http://127.0.0.1:8001/api/candidat/profil/candidat/",
+                files=files,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                return JsonResponse({'success': True, 'filename': cv_file.name})
+            return JsonResponse({'error': response.text}, status=400)
+        except requests.exceptions.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Fichier manquant'}, status=400)
+
+
+def supprimer_offre(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        # Pour une requête AJAX, renvoyer un statut 401 Unauthorized
+        return JsonResponse({"success": False, "message": "Veuillez vous connecter pour supprimer une offre."}, status=401)
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"
+
+    if request.method == "DELETE": # Utiliser la méthode DELETE pour l'API REST
+        try:
+            headers = {'Authorization': f'Bearer {token}'}
+            response = requests.delete(api_url, headers=headers)
+            response.raise_for_status()  # Lève une exception pour les codes d'erreur HTTP (4xx ou 5xx)
+
+            # Si tout est bon, renvoyer une réponse JSON de succès
+            return JsonResponse({"success": True, "message": "Offre supprimée avec succès !"})
+        except requests.exceptions.RequestException as e:
+            error_message = f"Erreur lors de la suppression de l’offre : {e}"
+            print(f"Erreur lors de l'appel API pour la suppression : {e}")
+            # Renvoyer une réponse JSON d'erreur avec un statut approprié
+            return JsonResponse({"success": False, "message": error_message}, status=response.status_code if response else 500)
+    else:
+        # Si la méthode n'est pas DELETE, renvoyer une erreur 405 Method Not Allowed
+        return JsonResponse({"success": False, "message": "Méthode non autorisée pour la suppression."}, status=405)
+    
+
+def liste_candidatures_candidat(request):
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir vos candidatures.")
+        return redirect("login_page") # Redirige vers la page de connexion si pas de token
+
+    api_url = "http://127.0.0.1:8001/api/candidat/applications/"
+    candidatures = []
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status() # Lève une exception pour les codes d'erreur HTTP
+
+        data = response.json()
+        candidatures_brutes = data.get('results', []) # L'API renvoie un dictionnaire avec 'results'
+
+        for candidature in candidatures_brutes:
+            # Traitement de la date de soumission
+            if 'date_soumission' in candidature and candidature['date_soumission']:
+                try:
+                    # Parse la chaîne ISO 8601
+                    date_str = candidature['date_soumission'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+                    candidature['date_soumission_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour candidature {candidature.get('id')}: {candidature['date_soumission']} - {ve}")
+                    candidature['date_soumission_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour candidature {candidature.get('id')}: {e}")
+                    candidature['date_soumission_formatee'] = "Erreur de date"
+            else:
+                candidature['date_soumission_formatee'] = "Non spécifiée"
+            candidatures.append(candidature)
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer vos candidatures : {e}"
+        print(f"Erreur lors de l'appel API pour les candidatures du candidat : {e}")
+    except Exception as e:
+        error_message = f"Une erreur inattendue s'est produite lors de la récupération des candidatures : {e}"
+        print(f"Erreur inattendue : {e}")
+
+    context = {
+        'candidatures': candidatures,
+        'error_message': error_message,
+        'titre_page': "Mes Candidatures",
+    }
+
+    # Le nouveau template sera dans 'dashboardCan_templates'
+    return render(request, 'dashboardCan_templates/candidatures_candidat.html', context)
+
+
+
 
 def telecharger_offre(request):
     """Vue temporaire en attendant l'implémentation complète"""
     # TODO: À implémenter par [nom du collègue]
     context = {}  # contexte vide pour l'instant
     return render(request, 'main_app/offres_emploi_can.html', context)
-        
-        
