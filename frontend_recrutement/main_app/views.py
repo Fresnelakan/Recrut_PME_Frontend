@@ -827,8 +827,6 @@ def profile_view_candidat(request):
 
     # --- Gérer la soumission du formulaire (requêtes POST) ---
     if request.method == "POST":
-<<<<<<< HEAD
-=======
         # Vérifie si le formulaire POST est celui des infos de contact
         if 'full_name' in request.POST: # Un champ unique au formulaire de contact
             # Récupération des données du formulaire
@@ -955,7 +953,7 @@ def profile_view_candidat(request):
 
     # --- Gérer la soumission du formulaire (requêtes POST) ---
     if request.method == "POST":
->>>>>>> 8a52ae46f501a0cc80bc1b61ed1fee1c585f6635
+
         form_data = {
             "nom_complet": request.POST.get("nom_complet", ""),
             "email": request.POST.get("email", ""),
@@ -979,54 +977,6 @@ def profile_view_candidat(request):
             action_message = "créé" 
             if profile_exists or response.status_code == 200:
                 action_message = "mis à jour"
-<<<<<<< HEAD
-
-            if response.status_code in [200, 201]:
-                profile_data_returned = response.json()
-                if 'cv' in profile_data_returned and profile_data_returned['cv']:
-                    profile_data_returned['cv_filename'] = os.path.basename(profile_data_returned['cv'])
-                context['profile_data'] = profile_data_returned 
-                context['success_message'] = f"Profil {action_message} avec succès !"
-                context['profile_exists'] = True 
-                # Si le profil a été mis à jour, nous réinitialisons info_message pour éviter la redondance
-                context['info_message'] = "Vous avez déjà un profil. Vous pouvez le modifier ci-dessous." if profile_exists else None
-
-            else:
-                error_details = response.json() if response.content else {}
-                validation_errors = []
-                
-                
-                if response.status_code == 400 and "already exists" in response.text.lower():
-                    context['info_message'] = "Vous avez déjà un profil. Veuillez le modifier plutôt que d'essayer d'en créer un nouveau."
-                    context['profile_exists'] = True # On sait qu'un profil existe
-                  
-                    context['info_message'] = "Un profil existe déjà pour cet utilisateur. Veuillez le modifier."
-                    context['profile_exists'] = True
-                # --- FIN NOUVELLE LOGIQUE ---
-                
-                else: # Autres erreurs de validation ou d'API
-                    if isinstance(error_details, dict):
-                        for field, errors in error_details.items():
-                            if field == 'detail':
-                                validation_errors.append(errors)
-                            elif isinstance(errors, list):
-                                validation_errors.append(f"{field.capitalize()}: {' '.join(errors)}")
-                            else:
-                                validation_errors.append(f"{field.capitalize()}: {errors}")
-                    else:
-                        validation_errors.append(str(error_details))
-                    context['error_message'] = "Erreurs de validation : <br>" + "<br>".join(validation_errors)
-                
-                context['profile_data'].update(form_data) 
-                
-        except requests.exceptions.ConnectionError:
-            context['error_message'] = "Impossible de se connecter à l'API pour soumettre le profil."
-        except Exception as e:
-            context['error_message'] = f"Vous avez deja un profil"
-        
-    return render(request, 'dashboardCan_templates/profil.html', context)
-
-=======
 
             if response.status_code in [200, 201]:
                 profile_data_returned = response.json()
@@ -1097,7 +1047,6 @@ def profile_view_pme(request):
     
 
 ## A revoir pour plus tard
->>>>>>> 8a52ae46f501a0cc80bc1b61ed1fee1c585f6635
 
 def offres_emploi_can(request):
     """Affiche la liste des offres d'emploi actives pour les candidats"""
@@ -1251,29 +1200,204 @@ def postuler_offre(request, offre_id):
 
 
 # views.py
-def profile_candidat_view(request):
-    """Récupère le profil candidat"""
-    token = request.session.get("accessToken")
-    if not token:
-        return redirect('login')
+# frontend_recrutement/main_app/views.py
+
+# frontend_recrutement/main_app/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+# frontend_recrutement/main_app/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import requests
+import os
+import json 
+
+# Define API URLs for Candidat Profile
+CANDIDAT_PROFILE_LIST_CREATE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+# L'URL de détail est la base, nous ajoutons l'ID après.
+CANDIDAT_PROFILE_DETAIL_API_BASE_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/" 
+
+# ... (gardez toutes les autres imports et fonctions que vous avez, mais assurez-vous qu'il n'y a qu'UNE seule définition de profile_view_candidat) ...
+
+def profile_view_candidat(request):
+    access_token = request.session.get("accessToken")
+    if not access_token:
+        messages.warning(request, "Veuillez vous connecter pour voir ou gérer votre profil.")
+        return redirect('login_view')
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    profile_data = {} # Will store existing profile data or submitted form data
+    profile_id_in_session = request.session.get('candidat_profile_id') # Get ID from session
+
+    context = {
+        'titre_page': "Mon Profil Candidat",
+        'profile_data': {}, # Data to pre-fill the form
+        'profile_exists': False, # Flag to know if a profile exists
+        'form_action_url': 'profile', # Form will always POST to this same URL name
+        'button_text': "Créer mon profil", # Default button text
+    }
+
+    # --- Phase 1: Retrieve existing profile data (for GET requests or initial load) ---
+    fetched_profile = None
     
-    headers = {"Authorization": f"Bearer {token}"}
-    try:
-        # Récupération du profil complet
-        response = requests.get(
-            "http://127.0.0.1:8001/api/candidat/profil/candidat/",
-            headers=headers
-        )
-        if response.status_code == 200:
-            return render(request, 'dashboardCan_templates/profil.html', {
-                'profile': response.json()
-            })
-    except requests.exceptions.RequestException as e:
-        print(f"Erreur API: {e}")
-    
-    return render(request, 'dashboardCan_templates/profil.html', {
-        'error_message': "Erreur lors de la récupération du profil"
-    })
+    # Try to fetch using the ID from session if available (more direct)
+    if profile_id_in_session:
+        try:
+            response_get_detail = requests.get(f"{CANDIDAT_PROFILE_DETAIL_API_BASE_URL}{profile_id_in_session}/", headers=headers)
+            if response_get_detail.status_code == 200:
+                fetched_profile = response_get_detail.json()
+            elif response_get_detail.status_code == 404:
+                print(f"DEBUG (Frontend): Profile with ID {profile_id_in_session} not found. Trying list endpoint.")
+                request.session.pop('candidat_profile_id', None) # Clear stale ID
+            else:
+                 messages.warning(request, f"Erreur de récupération profil par ID ({profile_id_in_session}): {response_get_detail.status_code} - {response_get_detail.text}")
+
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Connexion à l'API du profil échouée lors de la récupération par ID.")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except json.JSONDecodeError:
+            messages.error(request, f"Erreur de décodage JSON lors de la récupération par ID. Réponse: {response_get_detail.text}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except Exception as e:
+            messages.error(request, f"Erreur inattendue lors de la récupération du profil par ID: {str(e)}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # If profile not fetched by ID (or no ID in session), try the list endpoint
+    if not fetched_profile:
+        try:
+            response_get_list = requests.get(CANDIDAT_PROFILE_LIST_CREATE_API_URL, headers=headers)
+            
+            if response_get_list.status_code == 200:
+                list_data = response_get_list.json()
+                if isinstance(list_data, list) and list_data: # If it's a list with at least one profile
+                    fetched_profile = list_data[0] # Assume the first is the user's profile
+                elif isinstance(list_data, dict) and list_data.get('id'): # If it returns a single dict directly
+                    fetched_profile = list_data
+            elif response_get_list.status_code == 404: # No profile found, which is expected for new users
+                pass 
+            elif response_get_list.status_code == 401:
+                request.session.pop("accessToken", None)
+                messages.error(request, "Votre session a expiré ou est invalide. Veuillez vous reconnecter.")
+                return redirect('login_view')
+            else:
+                messages.warning(request, f"Erreur lors de la récupération du profil par liste ({response_get_list.status_code} - {response_get_list.text}).")
+
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Connexion à l'API du profil échouée lors de la récupération par liste.")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except json.JSONDecodeError:
+            messages.error(request, f"Erreur de décodage JSON lors de la récupération par liste. Réponse: {response_get_list.text}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except Exception as e:
+            messages.error(request, f"Erreur inattendue lors de la récupération du profil par liste: {str(e)}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # Update context based on fetched profile
+    if fetched_profile:
+        profile_data = fetched_profile
+        request.session['candidat_profile_id'] = profile_data.get('id') # Ensure ID is in session
+        context['profile_data'] = profile_data
+        context['profile_exists'] = True
+        context['button_text'] = "Enregistrer les modifications"
+        context['titre_page'] = "Modifier Mon Profil Candidat"
+        if 'cv' in profile_data and profile_data['cv']:
+            # Assuming profile_data['cv'] is a URL, extract filename
+            context['profile_data']['cv_filename'] = os.path.basename(profile_data['cv'].split('?')[0]) # Remove query params
+        else:
+            context['profile_data']['cv_filename'] = "Aucun fichier choisi"
+    else:
+        # No profile found for this user
+        messages.info(request, "Vous n'avez pas encore de profil. Veuillez en créer un.")
+        request.session.pop('candidat_profile_id', None) # Ensure no stale ID
+        context['profile_exists'] = False
+        context['button_text'] = "Créer mon profil"
+        context['titre_page'] = "Créer Mon Profil Candidat"
+
+
+    # --- Phase 2: Process form submission (POST request from frontend) ---
+    if request.method == 'POST':
+        # Always update profile_data with submitted form data first for pre-filling in case of error
+        form_data = {
+            "nom_complet": request.POST.get("nom_complet", ""),
+            "email": request.POST.get("email", ""),
+            "description": request.POST.get("description", ""),
+            "langue": request.POST.get("langue", ""),
+        }
+        context['profile_data'].update(form_data) # Update context with new form data
+        cv_file = request.FILES.get('cv')
+
+        files_to_send = {}
+        if cv_file:
+            files_to_send['cv'] = (cv_file.name, cv_file.read(), cv_file.content_type)
+        
+        try:
+            response = None
+            if context['profile_exists'] and request.session.get('candidat_profile_id'):
+                # Modification (PATCH)
+                profile_id = request.session.get('candidat_profile_id')
+                api_url = f"{CANDIDAT_PROFILE_DETAIL_API_BASE_URL}{profile_id}/"
+                print(f"DEBUG (Frontend): Envoi de PATCH à: {api_url} avec données: {form_data}, fichiers: {files_to_send.keys()}")
+                response = requests.patch(api_url, data=form_data, files=files_to_send, headers=headers)
+                expected_status = 200 # OK for PATCH
+                success_message = "Votre profil a été mis à jour avec succès !"
+            else:
+                # Création (POST)
+                api_url = CANDIDAT_PROFILE_LIST_CREATE_API_URL
+                print(f"DEBUG (Frontend): Envoi de POST à: {api_url} avec données: {form_data}, fichiers: {files_to_send.keys()}")
+                response = requests.post(api_url, data=form_data, files=files_to_send, headers=headers)
+                expected_status = 201 # Created for POST
+                success_message = "Votre profil a été créé avec succès !"
+            
+            if response.status_code == expected_status: 
+                profile_data_returned = response.json()
+                request.session['candidat_profile_id'] = profile_data_returned.get('id') # Store ID in session
+                messages.success(request, success_message)
+                return redirect('profile_view_candidat') # Redirect to force a clean GET and refresh data
+
+            else:
+                # Handle API errors (400, 401, etc.)
+                error_details = {}
+                try:
+                    error_details = response.json()
+                except json.JSONDecodeError:
+                    # If response is not JSON, display raw text (this is often the "Expecting value" error root cause)
+                    error_details = {"detail": f"Réponse non-JSON du serveur: {response.status_code} - {response.text}"}
+                
+                validation_errors = []
+                if isinstance(error_details, dict):
+                    if 'detail' in error_details:
+                        validation_errors.append(error_details['detail'])
+                    for field, errors in error_details.items():
+                        if field != 'detail':
+                            if isinstance(errors, list):
+                                validation_errors.append(f"{field.capitalize()}: {' '.join(errors)}")
+                            else:
+                                validation_errors.append(f"{field.capitalize()}: {errors}")
+                else:
+                    validation_errors.append(str(error_details))
+
+                messages.error(request, "Erreur(s) lors de la soumission du profil : <br>" + "<br>".join(validation_errors))
+                
+                # If there was an error, the form should still show existing CV filename
+                if 'cv_filename' not in context['profile_data'] and 'cv' in profile_data:
+                    context['profile_data']['cv_filename'] = os.path.basename(profile_data['cv'].split('?')[0])
+                
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Impossible de se connecter à l'API pour soumettre le profil. Veuillez vérifier que le backend est en cours d'exécution.")
+        except json.JSONDecodeError as e:
+            # This specific JSONDecodeError happens if response.json() fails
+            messages.error(request, f"Erreur de décodage JSON après soumission. Réponse inattendue du backend: {response.text if 'response' in locals() else 'Pas de réponse'} - {e}")
+        except Exception as e:
+            messages.error(request, f"Une erreur inattendue est survenue lors de la soumission du profil: {str(e)}")
+        
+        # If there was an error during POST/PATCH, render the current page with error messages
+        return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # For GET request (initial load or after successful redirect)
+    return render(request, 'dashboardCan_templates/profil.html', context)
+
 
 def update_profil_candidat(request):
     """Met à jour les infos du candidat"""
