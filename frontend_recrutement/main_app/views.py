@@ -87,6 +87,7 @@ import requests
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from datetime import datetime
+from django.core.paginator import Paginator
 
 def modifier_offre(request, offre_id):
     token = request.session.get("accessToken")
@@ -213,6 +214,46 @@ def liste_offres_emploi(request):
     }
 
     return render(request, 'offres_emploi/liste_offres_emploi.html', context)
+
+def liste_offres_pme_avec_candidatures(request):
+    print("Contenu de la session (PME candidatures) :", request.session.items())  # Débogage spécifique
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir vos offres et les candidatures.")
+        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+
+    api_url = "http://127.0.0.1:8001/api/pme/offres/" # Assurez-vous que cette URL API renvoie bien les offres pour la PME connectée
+    offres = []
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print("Données de l'API (PME candidatures) :", data)  # Débogage spécifique
+        if isinstance(data, dict) and 'results' in data:
+            offres = data.get('results', [])
+        else:
+            offres = data
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer vos offres depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour la liste des offres PME : {e}")
+
+    context = {
+        'offres': offres,
+        'error_message': error_message,
+        'titre_page': "Mes Offres et les Candidatures", # Titre de page adapté
+    }
+
+    # IMPORTANT : Rendre le NOUVEAU template
+    return render(request, 'offres_emploi/liste_offres_pme_avec_candidatures.html', context)
+
+
+
+
 def liste_offres(request):
     print("Contenu de la session :", request.session.items())  # Débogage
     token = request.session.get("accessToken")
@@ -544,9 +585,52 @@ def register(request):
             
             return redirect("login")
     
-    
-    
     return render(request, 'register.html')
+
+
+# Dans ton views.py (frontend)
+
+def logout_view(request):
+    if request.method == "POST":
+        refresh_token = request.session.get("refreshToken")
+        access_token = request.session.get("accessToken") # <-- Récupère l'access token
+
+        if refresh_token:
+            headers = {} # Initialise les headers
+            if access_token:
+                headers["Authorization"] = f"Bearer {access_token}" # <-- Ajoute l'access token si présent
+
+            try:
+                # Appeler l'API de déconnexion du backend
+                backend_logout_url = "http://127.0.0.1:8001/api/auth/logout/"
+                response = requests.post(
+                    backend_logout_url,
+                    json={"refresh": refresh_token},
+                    headers=headers # <-- Ajoute les headers à la requête
+                )
+
+                if response.status_code == 205:
+                    print("Déconnexion réussie côté API backend.")
+                elif response.status_code == 401:
+                    print("La requête de déconnexion était non autorisée par le backend (401).")
+                    print(f"Détails de l'erreur 401: {response.text}")
+                else:
+                    print(f"Erreur inattendue lors de la déconnexion côté API backend: {response.status_code} - {response.text}")
+
+            except requests.exceptions.RequestException as e:
+                print(f"Erreur réseau lors de l'appel à l'API de déconnexion: {e}")
+            except Exception as e:
+                print(f"Une erreur inattendue est survenue lors de la déconnexion: {e}")
+
+        # Dans tous les cas, vider la session Django pour déconnecter l'utilisateur localement
+        request.session.flush()
+        print("Session Django vidée.")
+
+        # Rediriger vers la page de connexion
+        return redirect('login')
+
+    # Si la méthode n'est pas POST
+    return redirect('dashboard') # Ou n'importe quelle page par défaut
 
 import requests
 from django.shortcuts import render, redirect
@@ -619,6 +703,7 @@ def dashboard_view(request):
     }
 
     return render(request, "dashboardCan_templates/index_can.html", context)
+
 def edit_profile(request):
     return render(request, 'profile/edit_profile.html')
 
@@ -705,40 +790,126 @@ def upload_cv_view(request):
     else:
         # Si quelqu'un essaie d'accéder à cette URL directement avec GET
         return redirect('profile_view_candidat') # Redirige vers la page de profil        
+from django.shortcuts import render, redirect
+import requests
+
+from django.shortcuts import render, redirect
+import requests
+from django.shortcuts import render, redirect
+import requests
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+from requests.exceptions import RequestException
+from django.conf import settings # Assurez-vous que settings est importé
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from datetime import datetime
+from requests.exceptions import RequestException
+from django.conf import settings
+import os # Import the os module
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import os # Importer le module os pour la manipulation des chemins
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import os
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import os
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
+import requests
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import os
+
+# URL de base de l'API pour les profils candidats
+CANDIDAT_PROFILE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+
 def profile_view_candidat(request):
     access_token = request.session.get("accessToken")
 
+    # Rediriger si l'utilisateur n'est pas connecté
     if not access_token:
-        # Gérer l'absence de token (rediriger vers login, message d'erreur, etc.)
-        # return redirect('login_page') # Exemple
-        return render(request, 'dashboardCan_templates/profil.html', {"error_message": "Veuillez vous connecter pour voir votre profil."})
+        messages.warning(request, "Veuillez vous connecter pour voir ou créer votre profil.")
+        return redirect('login_view') 
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    profile_data = {} # Initialise un dictionnaire vide pour les données du profil
+    profile_data = {} 
+    profile_exists = False 
 
-    # --- Récupération du profil (GET) ---
+    context = {
+        'titre_page': "Mon Profil Candidat",
+        'profile_data': {}, 
+        'error_message': None,
+        'success_message': None,
+        'info_message': None, # Ce sera le message affiché en cas de profil déjà existant
+        'profile_exists': False, 
+    }
+
+    # --- Tenter de récupérer le profil existant (pour les requêtes GET) ---
     try:
-        response_get = requests.get(f"http://127.0.0.1:8001/api/auth/profile/", headers=headers)
-
+        response_get = requests.get(CANDIDAT_PROFILE_API_URL, headers=headers)
         if response_get.status_code == 200:
             profile_data = response_get.json()
-            # Pour l'affichage des CV: vérifie si ton API renvoie un champ 'cv_url' ou 'cv_filename'
-            # profile_data['cv_filename'] = profile_data.get('cv', '').split('/')[-1] if profile_data.get('cv') else ''
-            # profile_data['cv_url'] = profile_data.get('cv', '') # Assurez-vous que l'API renvoie l'URL complète
+            profile_exists = True
+            context['profile_exists'] = True 
+            # context['info_message'] = "Vous avez déjà un profil. Vous pouvez le modifier ci-dessous."
+            if 'cv' in profile_data and profile_data['cv']:
+                profile_data['cv_filename'] = os.path.basename(profile_data['cv'])
+        elif response_get.status_code == 404:
+            profile_exists = False
+            context['profile_exists'] = False 
+            context['info_message'] = "Vous n'avez pas encore de profil. Veuillez en créer un."
         else:
-            # Gérer les erreurs GET
             error_message = f"Erreur lors de la récupération du profil: {response_get.status_code} - {response_get.text}"
             if response_get.status_code == 401:
-                request.session.pop("accessToken", None)
-                error_message = "Votre session a expiré ou est invalide. Veuillez vous reconnecter."
-            return render(request, 'dashboardCan_templates/profil.html', {"error_message": error_message})
+                request.session.pop("accessToken", None) 
+                messages.error(request, "Votre session a expiré ou est invalide. Veuillez vous reconnecter.")
+                return redirect('login_view')
+            context['error_message'] = error_message
+            context['profile_data'] = profile_data 
+            return render(request, 'dashboardCan_templates/profil.html', context)
 
     except requests.exceptions.ConnectionError:
-        return render(request, 'dashboardCan_templates/profil.html', {"error_message": "Impossible de se connecter à l'API du profil."})
+        context['error_message'] = "Impossible de se connecter à l'API du profil. Veuillez vérifier que le backend est en cours d'exécution."
+        context['profile_data'] = profile_data 
+        return render(request, 'dashboardCan_templates/profil.html', context)
     except Exception as e:
-        return render(request, 'dashboardCan_templates/profil.html', {"error_message": f"Une erreur inattendue est survenue: {e}"})
+        context['error_message'] = f"Vous avez deja un profil "
+        context['profile_data'] = profile_data 
+        return render(request, 'dashboardCan_templates/profil.html', context)
 
-    # --- Gestion de la mise à jour du profil (POST pour les infos de contact) ---
+    context['profile_data'] = profile_data
+
+    # --- Gérer la soumission du formulaire (requêtes POST) ---
     if request.method == "POST":
         # Vérifie si le formulaire POST est celui des infos de contact
         if 'full_name' in request.POST: # Un champ unique au formulaire de contact
@@ -866,6 +1037,7 @@ def profile_view_candidat(request):
 
     # --- Gérer la soumission du formulaire (requêtes POST) ---
     if request.method == "POST":
+
         form_data = {
             "nom_complet": request.POST.get("nom_complet", ""),
             "email": request.POST.get("email", ""),
@@ -1112,29 +1284,204 @@ def postuler_offre(request, offre_id):
 
 
 # views.py
-def profile_candidat_view(request):
-    """Récupère le profil candidat"""
-    token = request.session.get("accessToken")
-    if not token:
-        return redirect('login')
+# frontend_recrutement/main_app/views.py
+
+# frontend_recrutement/main_app/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+# frontend_recrutement/main_app/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+import requests
+import os
+import json 
+
+# Define API URLs for Candidat Profile
+CANDIDAT_PROFILE_LIST_CREATE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
+# L'URL de détail est la base, nous ajoutons l'ID après.
+CANDIDAT_PROFILE_DETAIL_API_BASE_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/" 
+
+# ... (gardez toutes les autres imports et fonctions que vous avez, mais assurez-vous qu'il n'y a qu'UNE seule définition de profile_view_candidat) ...
+
+def profile_view_candidat(request):
+    access_token = request.session.get("accessToken")
+    if not access_token:
+        messages.warning(request, "Veuillez vous connecter pour voir ou gérer votre profil.")
+        return redirect('login_view')
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    profile_data = {} # Will store existing profile data or submitted form data
+    profile_id_in_session = request.session.get('candidat_profile_id') # Get ID from session
+
+    context = {
+        'titre_page': "Mon Profil Candidat",
+        'profile_data': {}, # Data to pre-fill the form
+        'profile_exists': False, # Flag to know if a profile exists
+        'form_action_url': 'profile', # Form will always POST to this same URL name
+        'button_text': "Créer mon profil", # Default button text
+    }
+
+    # --- Phase 1: Retrieve existing profile data (for GET requests or initial load) ---
+    fetched_profile = None
     
-    headers = {"Authorization": f"Bearer {token}"}
-    try:
-        # Récupération du profil complet
-        response = requests.get(
-            "http://127.0.0.1:8001/api/candidat/profil/candidat/",
-            headers=headers
-        )
-        if response.status_code == 200:
-            return render(request, 'dashboardCan_templates/profil.html', {
-                'profile': response.json()
-            })
-    except requests.exceptions.RequestException as e:
-        print(f"Erreur API: {e}")
-    
-    return render(request, 'dashboardCan_templates/profil.html', {
-        'error_message': "Erreur lors de la récupération du profil"
-    })
+    # Try to fetch using the ID from session if available (more direct)
+    if profile_id_in_session:
+        try:
+            response_get_detail = requests.get(f"{CANDIDAT_PROFILE_DETAIL_API_BASE_URL}{profile_id_in_session}/", headers=headers)
+            if response_get_detail.status_code == 200:
+                fetched_profile = response_get_detail.json()
+            elif response_get_detail.status_code == 404:
+                print(f"DEBUG (Frontend): Profile with ID {profile_id_in_session} not found. Trying list endpoint.")
+                request.session.pop('candidat_profile_id', None) # Clear stale ID
+            else:
+                 messages.warning(request, f"Erreur de récupération profil par ID ({profile_id_in_session}): {response_get_detail.status_code} - {response_get_detail.text}")
+
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Connexion à l'API du profil échouée lors de la récupération par ID.")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except json.JSONDecodeError:
+            messages.error(request, f"Erreur de décodage JSON lors de la récupération par ID. Réponse: {response_get_detail.text}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except Exception as e:
+            messages.error(request, f"Erreur inattendue lors de la récupération du profil par ID: {str(e)}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # If profile not fetched by ID (or no ID in session), try the list endpoint
+    if not fetched_profile:
+        try:
+            response_get_list = requests.get(CANDIDAT_PROFILE_LIST_CREATE_API_URL, headers=headers)
+            
+            if response_get_list.status_code == 200:
+                list_data = response_get_list.json()
+                if isinstance(list_data, list) and list_data: # If it's a list with at least one profile
+                    fetched_profile = list_data[0] # Assume the first is the user's profile
+                elif isinstance(list_data, dict) and list_data.get('id'): # If it returns a single dict directly
+                    fetched_profile = list_data
+            elif response_get_list.status_code == 404: # No profile found, which is expected for new users
+                pass 
+            elif response_get_list.status_code == 401:
+                request.session.pop("accessToken", None)
+                messages.error(request, "Votre session a expiré ou est invalide. Veuillez vous reconnecter.")
+                return redirect('login_view')
+            else:
+                messages.warning(request, f"Erreur lors de la récupération du profil par liste ({response_get_list.status_code} - {response_get_list.text}).")
+
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Connexion à l'API du profil échouée lors de la récupération par liste.")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except json.JSONDecodeError:
+            messages.error(request, f"Erreur de décodage JSON lors de la récupération par liste. Réponse: {response_get_list.text}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+        except Exception as e:
+            messages.error(request, f"Erreur inattendue lors de la récupération du profil par liste: {str(e)}")
+            return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # Update context based on fetched profile
+    if fetched_profile:
+        profile_data = fetched_profile
+        request.session['candidat_profile_id'] = profile_data.get('id') # Ensure ID is in session
+        context['profile_data'] = profile_data
+        context['profile_exists'] = True
+        context['button_text'] = "Enregistrer les modifications"
+        context['titre_page'] = "Modifier Mon Profil Candidat"
+        if 'cv' in profile_data and profile_data['cv']:
+            # Assuming profile_data['cv'] is a URL, extract filename
+            context['profile_data']['cv_filename'] = os.path.basename(profile_data['cv'].split('?')[0]) # Remove query params
+        else:
+            context['profile_data']['cv_filename'] = "Aucun fichier choisi"
+    else:
+        # No profile found for this user
+        messages.info(request, "Vous n'avez pas encore de profil. Veuillez en créer un.")
+        request.session.pop('candidat_profile_id', None) # Ensure no stale ID
+        context['profile_exists'] = False
+        context['button_text'] = "Créer mon profil"
+        context['titre_page'] = "Créer Mon Profil Candidat"
+
+
+    # --- Phase 2: Process form submission (POST request from frontend) ---
+    if request.method == 'POST':
+        # Always update profile_data with submitted form data first for pre-filling in case of error
+        form_data = {
+            "nom_complet": request.POST.get("nom_complet", ""),
+            "email": request.POST.get("email", ""),
+            "description": request.POST.get("description", ""),
+            "langue": request.POST.get("langue", ""),
+        }
+        context['profile_data'].update(form_data) # Update context with new form data
+        cv_file = request.FILES.get('cv')
+
+        files_to_send = {}
+        if cv_file:
+            files_to_send['cv'] = (cv_file.name, cv_file.read(), cv_file.content_type)
+        
+        try:
+            response = None
+            if context['profile_exists'] and request.session.get('candidat_profile_id'):
+                # Modification (PATCH)
+                profile_id = request.session.get('candidat_profile_id')
+                api_url = f"{CANDIDAT_PROFILE_DETAIL_API_BASE_URL}{profile_id}/"
+                print(f"DEBUG (Frontend): Envoi de PATCH à: {api_url} avec données: {form_data}, fichiers: {files_to_send.keys()}")
+                response = requests.patch(api_url, data=form_data, files=files_to_send, headers=headers)
+                expected_status = 200 # OK for PATCH
+                success_message = "Votre profil a été mis à jour avec succès !"
+            else:
+                # Création (POST)
+                api_url = CANDIDAT_PROFILE_LIST_CREATE_API_URL
+                print(f"DEBUG (Frontend): Envoi de POST à: {api_url} avec données: {form_data}, fichiers: {files_to_send.keys()}")
+                response = requests.post(api_url, data=form_data, files=files_to_send, headers=headers)
+                expected_status = 201 # Created for POST
+                success_message = "Votre profil a été créé avec succès !"
+            
+            if response.status_code == expected_status: 
+                profile_data_returned = response.json()
+                request.session['candidat_profile_id'] = profile_data_returned.get('id') # Store ID in session
+                messages.success(request, success_message)
+                return redirect('profile_view_candidat') # Redirect to force a clean GET and refresh data
+
+            else:
+                # Handle API errors (400, 401, etc.)
+                error_details = {}
+                try:
+                    error_details = response.json()
+                except json.JSONDecodeError:
+                    # If response is not JSON, display raw text (this is often the "Expecting value" error root cause)
+                    error_details = {"detail": f"Réponse non-JSON du serveur: {response.status_code} - {response.text}"}
+                
+                validation_errors = []
+                if isinstance(error_details, dict):
+                    if 'detail' in error_details:
+                        validation_errors.append(error_details['detail'])
+                    for field, errors in error_details.items():
+                        if field != 'detail':
+                            if isinstance(errors, list):
+                                validation_errors.append(f"{field.capitalize()}: {' '.join(errors)}")
+                            else:
+                                validation_errors.append(f"{field.capitalize()}: {errors}")
+                else:
+                    validation_errors.append(str(error_details))
+
+                messages.error(request, "Erreur(s) lors de la soumission du profil : <br>" + "<br>".join(validation_errors))
+                
+                # If there was an error, the form should still show existing CV filename
+                if 'cv_filename' not in context['profile_data'] and 'cv' in profile_data:
+                    context['profile_data']['cv_filename'] = os.path.basename(profile_data['cv'].split('?')[0])
+                
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "Impossible de se connecter à l'API pour soumettre le profil. Veuillez vérifier que le backend est en cours d'exécution.")
+        except json.JSONDecodeError as e:
+            # This specific JSONDecodeError happens if response.json() fails
+            messages.error(request, f"Erreur de décodage JSON après soumission. Réponse inattendue du backend: {response.text if 'response' in locals() else 'Pas de réponse'} - {e}")
+        except Exception as e:
+            messages.error(request, f"Une erreur inattendue est survenue lors de la soumission du profil: {str(e)}")
+        
+        # If there was an error during POST/PATCH, render the current page with error messages
+        return render(request, 'dashboardCan_templates/profil.html', context)
+
+    # For GET request (initial load or after successful redirect)
+    return render(request, 'dashboardCan_templates/profil.html', context)
+
 
 def update_profil_candidat(request):
     """Met à jour les infos du candidat"""
@@ -1275,7 +1622,93 @@ def liste_candidatures_candidat(request):
     # Le nouveau template sera dans 'dashboardCan_templates'
     return render(request, 'dashboardCan_templates/candidatures_candidat.html', context)
 
+from django.http import Http404
 
+def liste_candidatures_offre(request, offre_id):
+    """
+    Affiche la liste des candidatures pour une offre d'emploi spécifique.
+    """
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les candidatures.")
+        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+
+    candidatures = []
+    error_message = None
+    offre_titre = "" # Initialisation
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/candidatures/"
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print(f"Données de l'API pour candidatures de l'offre {offre_id}:", data) # Débogage
+
+        if isinstance(data, dict) and 'results' in data:
+            candidatures_brutes = data.get('results', [])
+        else:
+            candidatures_brutes = data # Si l'API retourne directement une liste sans 'results'
+
+        for candidature in candidatures_brutes:
+            # Traitement de la date de soumission (comme dans votre exemple)
+            if 'date_soumission' in candidature and candidature['date_soumission']:
+                try:
+                    date_str = candidature['date_soumission'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+                    candidature['date_soumission_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour candidature {candidature.get('id')}: {candidature['date_soumission']} - {ve}")
+                    candidature['date_soumission_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour candidature {candidature.get('id')}: {e}")
+                    candidature['date_soumission_formatee'] = "Erreur de date"
+            else:
+                candidature['date_soumission_formatee'] = "Non spécifiée"
+            candidatures.append(candidature)
+
+        # Récupérer le titre de l'offre (comme discuté)
+        if candidatures:
+            offre_titre = candidatures[0].get('offre_titre', f"Offre n°{offre_id}")
+        else:
+            # Si aucune candidature n'est trouvée, nous pourrions vouloir récupérer le titre de l'offre
+            # en appelant une autre API pour l'offre seule. Pour l'instant, on met un placeholder.
+            # Example: Fetch offer details if no candidatures (optional, adds another API call)
+            # offer_detail_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"
+            # offer_response = requests.get(offer_detail_url, headers=headers)
+            # if offer_response.status_code == 200:
+            #     offer_data = offer_response.json()
+            #     offre_titre = offer_data.get('titre', f"Offre n°{offre_id} (aucune candidature)")
+            # else:
+            offre_titre = f"Offre n°{offre_id} (aucune candidature)"
+
+
+    except requests.exceptions.HTTPError as http_err:
+        if http_err.response.status_code == 404:
+            error_message = "Cette offre n'existe pas ou n'a pas de candidatures."
+            # print(f"DEBUG: Lever 404 pour offre_id {offre_id}") # Debug
+            raise Http404(error_message)
+        else:
+            error_message = f"Erreur HTTP lors de la récupération des candidatures : {http_err}"
+            print(f"Erreur HTTP pour candidatures offre {offre_id}: {http_err}")
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer les candidatures depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour les candidatures de l'offre {offre_id}: {e}")
+    except Exception as e:
+        error_message = f"Une erreur inattendue s'est produite : {e}"
+        print(f"Erreur inattendue dans liste_candidatures_offre : {e}")
+
+
+    context = {
+        'candidatures': candidatures,
+        'error_message': error_message,
+        'titre_page': f"Candidatures pour : {offre_titre}",
+        'offre_id': offre_id,
+    }
+
+    return render(request, 'offres_emploi/liste_candidatures_par_offre.html', context)
 
 
 def telecharger_offre(request):

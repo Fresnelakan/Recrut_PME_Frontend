@@ -1,0 +1,143 @@
+{% extends "base2.html" %}
+{% load static %}
+{% block style %}
+<style>
+    body {
+        font-family: sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    .offre {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+        display: flex; /* Utilisation de flexbox pour aligner contenu et boutons */
+        justify-content: space-between; /* Contenu à gauche, boutons à droite */
+        align-items: flex-start; /* Alignement vertical */
+        transition: box-shadow 0.3s ease;
+    }
+    .offre:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .offre-content {
+        flex: 1; /* Le contenu prend l'espace restant */
+    }
+    .offre h3 {
+        margin-top: 0;
+        color: #333; /* Couleur sombre pour correspondre à la capture */
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .offre p {
+        margin-bottom: 8px;
+    }
+    .offre strong {
+        display: inline-block;
+        width: 120px;
+        color: #388e3c;
+        font-weight: bold;
+    }
+    .offre .date {
+        color: #666;
+        font-style: italic;
+        margin-bottom: 10px;
+    }
+    .offre .description {
+        margin-top: 10px;
+        border-top: 1px dashed #eee;
+        padding-top: 10px;
+        font-size: 0.95em;
+        line-height: 1.5;
+        color: #555;
+    }
+    .action-buttons {
+        display: flex;
+        flex-direction: column; /* Boutons empilés verticalement */
+        gap: 10px; /* Espacement entre les boutons */
+    }
+    .voir-plus-btn, .modifier-btn {
+        padding: 8px 16px;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 20px; /* Boutons arrondis */
+        font-size: 14px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ombre légère */
+    }
+    .voir-plus-btn {
+        background-color: #007bff; /* Bleu */
+    }
+    .voir-plus-btn:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px); /* Effet de soulèvement au survol */
+    }
+    .modifier-btn {
+        background-color: #28a745; /* Vert */
+    }
+    .modifier-btn:hover {
+        background-color: #218838;
+        transform: translateY(-2px);
+    }
+    .no-offers {
+        text-align: center;
+        color: #666;
+        font-size: 16px;
+    }
+    .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        text-decoration: none;
+        color: #007bff;
+    }
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+
+{% endblock style %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ titre_page }}</h1> {# Le titre sera "Mes Offres et Candidatures" #}
+    {% if error_message %}
+        <p style="color: red;">{{ error_message }}</p>
+    {% endif %}
+    {% if offres %}
+        {% for offre in offres %}
+            <div class="offre">
+                <div class="offre-content">
+                    <h3>{{ offre.titre }}</h3>
+                    <p><strong>Entreprise :</strong> {{ offre.entreprise.nom }}</p>
+                    <p class="date"><strong>Publié le :</strong> {{ offre.date_publication }}</p>
+                    <div class="description"><strong>Description :</strong> {{ offre.description }}</div>
+                </div>
+                <div class="action-buttons">
+                    {# Ce bouton redirigera vers la page des candidatures pour cette offre spécifique #}
+                    <a href="{% url 'liste_candidatures_offre' offre.id %}" class="candidatures-btn">Candidatures</a>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-offers">Aucune offre d'emploi n'a été trouvée.</p>
+    {% endif %}
+    <a href="{% url 'dashboard' %}" class="back-link">Retour au tableau de bord</a>
+</div>
+{% endblock content %}
