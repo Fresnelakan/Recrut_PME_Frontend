@@ -214,6 +214,46 @@ def liste_offres_emploi(request):
     }
 
     return render(request, 'offres_emploi/liste_offres_emploi.html', context)
+
+def liste_offres_pme_avec_candidatures(request):
+    print("Contenu de la session (PME candidatures) :", request.session.items())  # Débogage spécifique
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir vos offres et les candidatures.")
+        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+
+    api_url = "http://127.0.0.1:8001/api/pme/offres/" # Assurez-vous que cette URL API renvoie bien les offres pour la PME connectée
+    offres = []
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print("Données de l'API (PME candidatures) :", data)  # Débogage spécifique
+        if isinstance(data, dict) and 'results' in data:
+            offres = data.get('results', [])
+        else:
+            offres = data
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer vos offres depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour la liste des offres PME : {e}")
+
+    context = {
+        'offres': offres,
+        'error_message': error_message,
+        'titre_page': "Mes Offres et les Candidatures", # Titre de page adapté
+    }
+
+    # IMPORTANT : Rendre le NOUVEAU template
+    return render(request, 'offres_emploi/liste_offres_pme_avec_candidatures.html', context)
+
+
+
+
 def liste_offres(request):
     print("Contenu de la session :", request.session.items())  # Débogage
     token = request.session.get("accessToken")
@@ -545,9 +585,52 @@ def register(request):
             
             return redirect("login")
     
-    
-    
     return render(request, 'register.html')
+
+
+# Dans ton views.py (frontend)
+
+def logout_view(request):
+    if request.method == "POST":
+        refresh_token = request.session.get("refreshToken")
+        access_token = request.session.get("accessToken") # <-- Récupère l'access token
+
+        if refresh_token:
+            headers = {} # Initialise les headers
+            if access_token:
+                headers["Authorization"] = f"Bearer {access_token}" # <-- Ajoute l'access token si présent
+
+            try:
+                # Appeler l'API de déconnexion du backend
+                backend_logout_url = "http://127.0.0.1:8001/api/auth/logout/"
+                response = requests.post(
+                    backend_logout_url,
+                    json={"refresh": refresh_token},
+                    headers=headers # <-- Ajoute les headers à la requête
+                )
+
+                if response.status_code == 205:
+                    print("Déconnexion réussie côté API backend.")
+                elif response.status_code == 401:
+                    print("La requête de déconnexion était non autorisée par le backend (401).")
+                    print(f"Détails de l'erreur 401: {response.text}")
+                else:
+                    print(f"Erreur inattendue lors de la déconnexion côté API backend: {response.status_code} - {response.text}")
+
+            except requests.exceptions.RequestException as e:
+                print(f"Erreur réseau lors de l'appel à l'API de déconnexion: {e}")
+            except Exception as e:
+                print(f"Une erreur inattendue est survenue lors de la déconnexion: {e}")
+
+        # Dans tous les cas, vider la session Django pour déconnecter l'utilisateur localement
+        request.session.flush()
+        print("Session Django vidée.")
+
+        # Rediriger vers la page de connexion
+        return redirect('login')
+
+    # Si la méthode n'est pas POST
+    return redirect('dashboard') # Ou n'importe quelle page par défaut
 
 import requests
 from django.shortcuts import render, redirect
@@ -620,6 +703,7 @@ def dashboard_view(request):
     }
 
     return render(request, "dashboardCan_templates/index_can.html", context)
+
 def edit_profile(request):
     return render(request, 'profile/edit_profile.html')
 
@@ -1538,7 +1622,93 @@ def liste_candidatures_candidat(request):
     # Le nouveau template sera dans 'dashboardCan_templates'
     return render(request, 'dashboardCan_templates/candidatures_candidat.html', context)
 
+from django.http import Http404
 
+def liste_candidatures_offre(request, offre_id):
+    """
+    Affiche la liste des candidatures pour une offre d'emploi spécifique.
+    """
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour voir les candidatures.")
+        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+
+    candidatures = []
+    error_message = None
+    offre_titre = "" # Initialisation
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/candidatures/"
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        print(f"Données de l'API pour candidatures de l'offre {offre_id}:", data) # Débogage
+
+        if isinstance(data, dict) and 'results' in data:
+            candidatures_brutes = data.get('results', [])
+        else:
+            candidatures_brutes = data # Si l'API retourne directement une liste sans 'results'
+
+        for candidature in candidatures_brutes:
+            # Traitement de la date de soumission (comme dans votre exemple)
+            if 'date_soumission' in candidature and candidature['date_soumission']:
+                try:
+                    date_str = candidature['date_soumission'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+                    candidature['date_soumission_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour candidature {candidature.get('id')}: {candidature['date_soumission']} - {ve}")
+                    candidature['date_soumission_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour candidature {candidature.get('id')}: {e}")
+                    candidature['date_soumission_formatee'] = "Erreur de date"
+            else:
+                candidature['date_soumission_formatee'] = "Non spécifiée"
+            candidatures.append(candidature)
+
+        # Récupérer le titre de l'offre (comme discuté)
+        if candidatures:
+            offre_titre = candidatures[0].get('offre_titre', f"Offre n°{offre_id}")
+        else:
+            # Si aucune candidature n'est trouvée, nous pourrions vouloir récupérer le titre de l'offre
+            # en appelant une autre API pour l'offre seule. Pour l'instant, on met un placeholder.
+            # Example: Fetch offer details if no candidatures (optional, adds another API call)
+            # offer_detail_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"
+            # offer_response = requests.get(offer_detail_url, headers=headers)
+            # if offer_response.status_code == 200:
+            #     offer_data = offer_response.json()
+            #     offre_titre = offer_data.get('titre', f"Offre n°{offre_id} (aucune candidature)")
+            # else:
+            offre_titre = f"Offre n°{offre_id} (aucune candidature)"
+
+
+    except requests.exceptions.HTTPError as http_err:
+        if http_err.response.status_code == 404:
+            error_message = "Cette offre n'existe pas ou n'a pas de candidatures."
+            # print(f"DEBUG: Lever 404 pour offre_id {offre_id}") # Debug
+            raise Http404(error_message)
+        else:
+            error_message = f"Erreur HTTP lors de la récupération des candidatures : {http_err}"
+            print(f"Erreur HTTP pour candidatures offre {offre_id}: {http_err}")
+    except requests.exceptions.RequestException as e:
+        error_message = f"Impossible de récupérer les candidatures depuis le backend : {e}"
+        print(f"Erreur lors de l'appel API pour les candidatures de l'offre {offre_id}: {e}")
+    except Exception as e:
+        error_message = f"Une erreur inattendue s'est produite : {e}"
+        print(f"Erreur inattendue dans liste_candidatures_offre : {e}")
+
+
+    context = {
+        'candidatures': candidatures,
+        'error_message': error_message,
+        'titre_page': f"Candidatures pour : {offre_titre}",
+        'offre_id': offre_id,
+    }
+
+    return render(request, 'offres_emploi/liste_candidatures_par_offre.html', context)
 
 
 def telecharger_offre(request):

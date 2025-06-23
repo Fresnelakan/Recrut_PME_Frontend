@@ -29,7 +29,7 @@
     />
 
     <title>Jobnest</title>
-
+       {% block style %}{% endblock style %}
     <meta name="description" content="" />
 
     <!-- Favicon -->
@@ -149,42 +149,6 @@
               </a>
             </li>
 
-            <!-- Layouts 
-            <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div data-i18n="Layouts">Layouts</div>
-              </a>
-
-              <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="layouts-without-menu.html" class="menu-link">
-                    <div data-i18n="Without menu">Without menu</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-without-navbar.html" class="menu-link">
-                    <div data-i18n="Without navbar">Without navbar</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-container.html" class="menu-link">
-                    <div data-i18n="Container">Container</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-fluid.html" class="menu-link">
-                    <div data-i18n="Fluid">Fluid</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-blank.html" class="menu-link">
-                    <div data-i18n="Blank">Blank</div>
-                  </a>
-                </li>
-              </ul>
-            </li>-->
-
             <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Pages</span>
             </li>
@@ -229,11 +193,11 @@
                     <div data-i18n="Basic">Postuler</div>
                   </a>
                 </li>
-                <!-- <li class="menu-item">
+                <!--<li class="menu-item">
                   <a href="auth-forgot-password-basic.html" class="menu-link" >
                     <div data-i18n="Basic">Modification d'une offre</div>
                   </a> {% endcomment %}
-                </li> -->
+                </li>-->
               </ul>
             </li>
             <li class="menu-item">
@@ -555,11 +519,15 @@
                       <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="auth-login-basic.html">
+                      <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                         <i class="bx bx-power-off me-2"></i>
                         <span class="align-middle">Log Out</span>
                       </a>
                     </li>
+
+                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                      {% csrf_token %} {# C'est la protection CSRF de Django, très important ! #}
+                    </form>
                   </ul>
                 </li>
 
@@ -638,5 +606,6 @@
 
     <!-- Place this tag in your head or just before your close body tag. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+    
   </body>
 </html>

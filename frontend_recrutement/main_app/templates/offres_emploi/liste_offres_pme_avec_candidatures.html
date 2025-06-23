@@ -111,11 +111,12 @@
         text-decoration: underline;
     }
 </style>
+
 {% endblock style %}
 
 {% block content %}
 <div class="container">
-    <h1>{{ titre_page }}</h1>
+    <h1>{{ titre_page }}</h1> {# Le titre sera "Mes Offres et Candidatures" #}
     {% if error_message %}
         <p style="color: red;">{{ error_message }}</p>
     {% endif %}
@@ -123,20 +124,20 @@
         {% for offre in offres %}
             <div class="offre">
                 <div class="offre-content">
-                    <h3>{{ offre.titre }}</h3> <!-- Titre non cliquable -->
+                    <h3>{{ offre.titre }}</h3>
                     <p><strong>Entreprise :</strong> {{ offre.entreprise.nom }}</p>
                     <p class="date"><strong>Publié le :</strong> {{ offre.date_publication }}</p>
                     <div class="description"><strong>Description :</strong> {{ offre.description }}</div>
                 </div>
                 <div class="action-buttons">
-                    <a href="{% url 'offre_detail' offre.id %}" class="voir-plus-btn">Voir plus</a>
-
+                    {# Ce bouton redirigera vers la page des candidatures pour cette offre spécifique #}
+                    <a href="{% url 'liste_candidatures_offre' offre.id %}" class="candidatures-btn">Candidatures</a>
                 </div>
             </div>
         {% endfor %}
     {% else %}
-        <p class="no-offers">Aucune offre d'emploi disponible.</p>
+        <p class="no-offers">Aucune offre d'emploi n'a été trouvée.</p>
     {% endif %}
-    <a href="{% url 'dashboard' %}" class="back-link">Retour</a>
+    <a href="{% url 'dashboard' %}" class="back-link">Retour au tableau de bord</a>
 </div>
 {% endblock content %}

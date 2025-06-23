@@ -246,10 +246,11 @@
                 <div data-i18n="Misc">Candidatures</div>
               </a>
               <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="pages-misc-error.html" class="menu-link">
-                    <div data-i18n="Error">Listes des candidatures</div>
-                  </a>
+                 <li class="menu-item">
+                    {# C'est ici que la modification est faite #}
+                    <a href="{% url 'liste_offres_pme_candidatures' %}" class="menu-link">
+                        <div data-i18n="Error">Listes des candidatures</div>
+                    </a>
                 </li>
                 <!--<li class="menu-item">
                   <a href="pages-misc-under-maintenance.html" class="menu-link">
@@ -559,11 +560,15 @@
                       <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="auth-login-basic.html">
+                      <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                         <i class="bx bx-power-off me-2"></i>
                         <span class="align-middle">Log Out</span>
                       </a>
                     </li>
+
+                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display: none;">
+                      {% csrf_token %} {# C'est la protection CSRF de Django, très important ! #}
+                    </form>
                   </ul>
                 </li>
 
@@ -644,6 +649,8 @@
 
     <!-- Place this tag in your head or just before your close body tag. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+    
+
     {% block script %}{% endblock script %}
   </body>
 </html>
