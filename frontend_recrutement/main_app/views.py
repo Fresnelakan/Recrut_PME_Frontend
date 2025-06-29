@@ -1,13 +1,12 @@
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
-
+import json
 from datetime import datetime
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 import os
 import requests
-from django.shortcuts import render
-from django.conf import settings 
+
 
 def index(request):
     return render(request, 'index.html')
@@ -59,32 +58,8 @@ def offres_emploi(request):
 
     return render(request, 'offres_emploi/offres_emploi.html', context)
 
-
-
-
 import requests
-from django.shortcuts import render
 
-import requests
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from datetime import datetime
-
-import requests
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from datetime import datetime
-
-import requests
-from django.shortcuts import render, redirect
-from django.contrib import messages
-
-import requests
-from django.shortcuts import render, redirect
-from django.contrib import messages
-
-import requests
-from django.shortcuts import render, redirect
 from django.contrib import messages
 from datetime import datetime
 from django.core.paginator import Paginator
@@ -1234,69 +1209,58 @@ def offre_detail_candidat(request, offre_id):
     
     return render(request, 'dashboardCan_templates/offre_detail.html', context)
 
-
-def postuler_offre(request, offre_id):
-    token = request.session.get("accessToken")
-    if not token:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': 'Veuillez vous connecter pour postuler.'}, status=401)
-        messages.warning(request, "Veuillez vous connecter pour postuler.")
-        return redirect("login_page")
-
-    headers = {"Authorization": f"Bearer {token}"}
-    
-    # Vérifier les candidatures existantes
-    check_url = f"http://127.0.0.1:8001/api/candidat/applications/?offre={offre_id}"
-    check_response = requests.get(check_url, headers=headers)
-    
-    if check_response.status_code == 200 and len(check_response.json().get('results', [])) > 0:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': 'Vous avez déjà postulé à cette offre'}, status=400)
-        messages.warning(request, "Vous avez déjà postulé à cette offre")
-        return redirect('offre_detail_candidat', offre_id=offre_id)
-    
-    # Envoyer la candidature
-    api_url = "http://127.0.0.1:8001/api/candidat/applications/"
-    data = {"offre": offre_id}
-    
-    try:
-        response = requests.post(api_url, json=data, headers=headers)
-        
-        if response.status_code == 201:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': True})
-            messages.success(request, "Votre candidature a bien été enregistrée !")
-        else:
-            error = response.json().get('detail', 'Échec de la candidature')
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': error}, status=400)
-            messages.error(request, f"Erreur: {error}")
-            
-    except requests.exceptions.RequestException as e:
-        error = f"Erreur de connexion: {str(e)}"
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'error': error}, status=500)
-        messages.error(request, error)
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'error': 'Requête invalide'}, status=400)
-    return redirect('offre_detail_candidat', offre_id=offre_id)
-
-
-# views.py
-# frontend_recrutement/main_app/views.py
-
-# frontend_recrutement/main_app/views.py
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-# frontend_recrutement/main_app/views.py
-
 from django.shortcuts import render, redirect
 from django.contrib import messages
 import requests
-import os
-import json 
+from django.http import JsonResponse
+from datetime import datetime
+
+# ...
+def postuler_offre(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour postuler.")
+        return redirect("login_page")
+
+    # Vérifiez si le candidat a un profil/CV avant de postuler
+    # (Logique à ajouter si nécessaire)
+
+    # L'API de création de candidature n'a besoin que de l'ID de l'offre.
+    # Le backend identifiera le candidat grâce au token d'authentification.
+    api_url = "http://127.0.0.1:8001/api/candidat/applications/"
+    data = {
+        "offre": offre_id,
+        # Il n'est plus nécessaire d'envoyer le CV ici.
+        # Le backend l'associera depuis le profil du candidat connecté.
+    }
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        # Vérifiez d'abord si une candidature existe déjà
+        check_url = f"http://127.0.0.1:8001/api/candidat/applications/?offre={offre_id}"
+        check_response = requests.get(check_url, headers=headers)
+        if check_response.status_code == 200 and len(check_response.json().get('results', [])) > 0:
+            messages.warning(request, "Vous avez déjà postulé à cette offre")
+            return redirect('offre_detail_candidat', offre_id=offre_id)
+
+        # Si pas de candidature existante, on la crée
+        response = requests.post(api_url, json=data, headers=headers)
+        
+        if response.status_code == 201: # 201 Created
+            messages.success(request, "Votre candidature a bien été enregistrée !")
+        else:
+            # Gestion des erreurs de l'API
+            error = response.json().get('detail', 'Échec de la candidature')
+            messages.error(request, f"Erreur: {error}")
+            
+    except requests.exceptions.RequestException as e:
+        messages.error(request, f"Erreur de connexion: {str(e)}")
+
+    return redirect('offre_detail_candidat', offre_id=offre_id)
 
 # Define API URLs for Candidat Profile
 CANDIDAT_PROFILE_LIST_CREATE_API_URL = "http://127.0.0.1:8001/api/candidat/profil/candidat/"
@@ -1631,11 +1595,11 @@ def liste_candidatures_offre(request, offre_id):
     token = request.session.get("accessToken")
     if not token:
         messages.warning(request, "Veuillez vous connecter pour voir les candidatures.")
-        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+        return redirect("login")  # Assurez-vous que 'login' est le nom correct de votre URL de connexion
 
     candidatures = []
     error_message = None
-    offre_titre = "" # Initialisation
+    offre_titre = ""  # Initialisation
 
     api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/candidatures/"
 
@@ -1645,50 +1609,34 @@ def liste_candidatures_offre(request, offre_id):
         response.raise_for_status()
 
         data = response.json()
-        print(f"Données de l'API pour candidatures de l'offre {offre_id}:", data) # Débogage
+        print(f"Données de l'API pour candidatures de l'offre {offre_id}:", data)  # Débogage
 
         if isinstance(data, dict) and 'results' in data:
             candidatures_brutes = data.get('results', [])
         else:
-            candidatures_brutes = data # Si l'API retourne directement une liste sans 'results'
+            candidatures_brutes = data  # Si l'API retourne directement une liste sans 'results'
 
         for candidature in candidatures_brutes:
-            # Traitement de la date de soumission (comme dans votre exemple)
             if 'date_soumission' in candidature and candidature['date_soumission']:
                 try:
                     date_str = candidature['date_soumission'].replace('Z', '+00:00')
                     date_obj = datetime.fromisoformat(date_str)
                     candidature['date_soumission_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
-                except ValueError as ve:
-                    print(f"Erreur de formatage de date pour candidature {candidature.get('id')}: {candidature['date_soumission']} - {ve}")
+                except (ValueError, Exception) as e:
                     candidature['date_soumission_formatee'] = "Date invalide"
-                except Exception as e:
-                    print(f"Erreur inattendue lors du traitement de la date pour candidature {candidature.get('id')}: {e}")
-                    candidature['date_soumission_formatee'] = "Erreur de date"
             else:
                 candidature['date_soumission_formatee'] = "Non spécifiée"
+            candidature['cv_url'] = candidature.get('cv_url', None)
             candidatures.append(candidature)
 
-        # Récupérer le titre de l'offre (comme discuté)
         if candidatures:
             offre_titre = candidatures[0].get('offre_titre', f"Offre n°{offre_id}")
         else:
-            # Si aucune candidature n'est trouvée, nous pourrions vouloir récupérer le titre de l'offre
-            # en appelant une autre API pour l'offre seule. Pour l'instant, on met un placeholder.
-            # Example: Fetch offer details if no candidatures (optional, adds another API call)
-            # offer_detail_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/"
-            # offer_response = requests.get(offer_detail_url, headers=headers)
-            # if offer_response.status_code == 200:
-            #     offer_data = offer_response.json()
-            #     offre_titre = offer_data.get('titre', f"Offre n°{offre_id} (aucune candidature)")
-            # else:
             offre_titre = f"Offre n°{offre_id} (aucune candidature)"
-
 
     except requests.exceptions.HTTPError as http_err:
         if http_err.response.status_code == 404:
             error_message = "Cette offre n'existe pas ou n'a pas de candidatures."
-            # print(f"DEBUG: Lever 404 pour offre_id {offre_id}") # Debug
             raise Http404(error_message)
         else:
             error_message = f"Erreur HTTP lors de la récupération des candidatures : {http_err}"
@@ -1699,7 +1647,6 @@ def liste_candidatures_offre(request, offre_id):
     except Exception as e:
         error_message = f"Une erreur inattendue s'est produite : {e}"
         print(f"Erreur inattendue dans liste_candidatures_offre : {e}")
-
 
     context = {
         'candidatures': candidatures,

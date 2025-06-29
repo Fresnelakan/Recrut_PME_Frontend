@@ -5975,6 +5975,9 @@
 .bx-sidebar:before {
   content: "\ee72";
 }
+.bx-sidebar {
+  color: black; /* Définit la couleur du texte à l'intérieur de la sidebar en noir */
+}
 
 .bx-sitemap:before {
   content: "\ee73";

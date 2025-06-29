@@ -3,108 +3,102 @@
 {% block style %}
 <style>
     body {
-        font-family: sans-serif;
-        background-color: #f4f4f4;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #eef2f7;
         margin: 0;
         padding: 20px;
     }
     .container {
-        max-width: 800px;
-        margin: 20px auto;
+        max-width: 900px;
+        margin: 30px auto;
         background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
     h1 {
         text-align: center;
-        color: #333;
-        margin-bottom: 20px;
+        color: #2c3e50;
+        margin-bottom: 30px;
     }
     .offre {
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        padding: 15px;
-        margin-bottom: 20px;
-        background-color: #f9f9f9;
-        display: flex; /* Utilisation de flexbox pour aligner contenu et boutons */
-        justify-content: space-between; /* Contenu à gauche, boutons à droite */
-        align-items: flex-start; /* Alignement vertical */
-        transition: box-shadow 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        background: #fafafa;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        transition: all 0.3s ease;
     }
     .offre:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: #f1f9ff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     }
     .offre-content {
-        flex: 1; /* Le contenu prend l'espace restant */
+        flex: 1;
+        padding-right: 20px;
     }
     .offre h3 {
         margin-top: 0;
-        color: #333; /* Couleur sombre pour correspondre à la capture */
-        font-size: 18px;
-        font-weight: bold;
+        color: #0077cc;
+        font-size: 20px;
     }
     .offre p {
-        margin-bottom: 8px;
+        margin: 6px 0;
+        font-size: 15px;
+        color: #444;
     }
     .offre strong {
-        display: inline-block;
-        width: 120px;
-        color: #388e3c;
-        font-weight: bold;
+        color: #444;
     }
     .offre .date {
-        color: #666;
-        font-style: italic;
-        margin-bottom: 10px;
+        font-size: 13px;
+        color: #777;
     }
     .offre .description {
-        margin-top: 10px;
-        border-top: 1px dashed #eee;
-        padding-top: 10px;
-        font-size: 0.95em;
-        line-height: 1.5;
+        margin-top: 12px;
+        font-size: 14px;
         color: #555;
+        line-height: 1.6;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+        white-space: pre-line; /* ✅ Respecte les sauts de ligne */
     }
     .action-buttons {
         display: flex;
-        flex-direction: column; /* Boutons empilés verticalement */
-        gap: 10px; /* Espacement entre les boutons */
-    }
-    .voir-plus-btn, .modifier-btn {
-        padding: 8px 16px;
-        color: #fff;
-        text-decoration: none;
-        border-radius: 20px; /* Boutons arrondis */
-        font-size: 14px;
-        font-weight: bold;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Ombre légère */
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
     }
     .voir-plus-btn {
-        background-color: #007bff; /* Bleu */
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-weight: 500;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease, transform 0.2s ease;
     }
     .voir-plus-btn:hover {
         background-color: #0056b3;
-        transform: translateY(-2px); /* Effet de soulèvement au survol */
-    }
-    .modifier-btn {
-        background-color: #28a745; /* Vert */
-    }
-    .modifier-btn:hover {
-        background-color: #218838;
         transform: translateY(-2px);
     }
     .no-offers {
         text-align: center;
-        color: #666;
+        color: #888;
         font-size: 16px;
+        margin-top: 40px;
     }
     .back-link {
         display: block;
         text-align: center;
-        margin-top: 20px;
+        margin-top: 30px;
         text-decoration: none;
+        font-weight: bold;
         color: #007bff;
     }
     .back-link:hover {
@@ -123,20 +117,22 @@
         {% for offre in offres %}
             <div class="offre">
                 <div class="offre-content">
-                    <h3>{{ offre.titre }}</h3> <!-- Titre non cliquable -->
+                    <h3>{{ offre.titre }}</h3>
                     <p><strong>Entreprise :</strong> {{ offre.entreprise.nom }}</p>
                     <p class="date"><strong>Publié le :</strong> {{ offre.date_publication }}</p>
-                    <div class="description"><strong>Description :</strong> {{ offre.description }}</div>
+                    <div class="description">
+                        <strong>Description :</strong><br>
+                        {{ offre.description|linebreaksbr }}
+                    </div>
                 </div>
                 <div class="action-buttons">
                     <a href="{% url 'offre_detail' offre.id %}" class="voir-plus-btn">Voir plus</a>
-
                 </div>
             </div>
         {% endfor %}
     {% else %}
-        <p class="no-offers">Aucune offre d'emploi disponible.</p>
+        <p class="no-offers">Aucune offre d'emploi disponible pour le moment.</p>
     {% endif %}
-    <a href="{% url 'dashboard' %}" class="back-link">Retour</a>
+    <a href="{% url 'dashboard' %}" class="back-link">← Retour au tableau de bord</a>
 </div>
 {% endblock content %}
