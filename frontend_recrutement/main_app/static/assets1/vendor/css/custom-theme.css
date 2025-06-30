@@ -1,0 +1,77 @@
+/* assets1/css/custom-theme.css */
+
+/* * 1. Définir les nouvelles couleurs primaires et secondaires 
+ * Ceci mettra à jour tous les composants Bootstrap qui utilisent ces variables.
+ */
+:root {
+    --bs-primary: #2E8B57; /* Vert forêt profond */
+    --bs-primary-rgb: 46, 139, 87; /* Correspondant au RVB pour les opacités et dérivés */
+    --bs-secondary: #6c757d; /* Laisse le secondaire par défaut ou change-le aussi */
+    /* Tu peux ajouter d'autres couleurs si tu veux, par exemple une couleur d'accent pour les survols */
+    --bs-success: #4CAF50; /* Un vert plus classique pour les succès */
+    --bs-info: #2196F3;    /* Un bleu info plus standard */
+}
+
+/* * 2. Personnaliser le fond du menu latéral 
+ * Ceci cible spécifiquement la classe utilisée pour le fond du menu dans le thème Sneat.
+ */
+.layout-menu.menu-vertical.menu.bg-menu-theme {
+    background-color: #343A40 !important; /* Gris anthracite élégant */
+}
+
+/* * 3. Personnaliser le texte "Jobnest" dans le menu 
+ * Pour une "touche de particularité", on peut le rendre un peu plus visible/différent.
+ */
+.app-brand-text.demo.menu-text.fw-bolder {
+    color: #2E8B57 !important; /* Assure que Jobnest prend la couleur primaire */
+    font-weight: 700 !important; /* Force le gras si ce n'est pas déjà le cas */
+    letter-spacing: 0.05em; /* Ajoute un léger espacement entre les lettres */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Ajoute une petite ombre pour le faire ressortir */
+}
+
+/* * 4. Adapter la couleur de l'icône du logo SVG pour correspondre à la nouvelle primaire 
+ * Le SVG utilise directement des couleurs hardcodées.
+ */
+#g-app-brand use[fill="#696cff"] {
+    fill: #2E8B57 !important; /* Nouvelle couleur pour les parties vertes du logo */
+}
+#g-app-brand use[fill-opacity="0.2"] {
+    fill: #FFFFFF !important; /* Garde le blanc pour l'effet de lumière */
+}
+
+/* * 5. Styliser l'élément de menu actif pour qu'il corresponde à la nouvelle palette 
+ */
+.menu-item.active > .menu-link,
+.menu-item.active > .menu-link .menu-icon {
+    color: #2E8B57 !important; /* Couleur du texte et icône de l'élément actif */
+    background-color: rgba(46, 139, 87, 0.1) !important; /* Un fond léger pour l'élément actif */
+}
+
+/* * 6. Optionnel : Affiner d'autres éléments qui pourraient avoir le bleu par défaut 
+ * Par exemple, les liens standards, les boutons primaires.
+ */
+a {
+    color: var(--bs-primary); /* S'assure que les liens standards prennent la couleur primaire */
+}
+a:hover {
+    color: darken(var(--bs-primary), 10%); /* Assombrir au survol (nécessite Sass/Less ou calcul manuel) */
+    /* Ou simplement une couleur fixe un peu plus foncée */
+    color: #277D4B; 
+}
+
+.btn-primary {
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+}
+.btn-primary:hover {
+    background-color: #277D4B !important;
+    border-color: #277D4B !important;
+}
+
+/* Personnalisation des headers du menu */
+.menu-header {
+    color: rgba(255, 255, 255, 0.7) !important; /* Texte des en-têtes en blanc cassé */
+}
+.bg-menu-theme .menu-header:before {
+    background-color: rgba(255, 255, 255, 0.3) !important; /* Ligne de séparation plus claire */
+}

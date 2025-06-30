@@ -1706,6 +1706,7 @@ def liste_candidatures_offre(request, offre_id):
         'error_message': error_message,
         'titre_page': f"Candidatures pour : {offre_titre}",
         'offre_id': offre_id,
+        'access_token' : token,
     }
 
     return render(request, 'offres_emploi/liste_candidatures_par_offre.html', context)
