@@ -163,10 +163,21 @@ def offre_detail(request, offre_id):
         response.raise_for_status()
 
         offre = response.json()
-        # if 'date_publication' in offre:
-        #     date_obj = datetime.strptime(offre['date_publication'], '%Y-%m-%dT%H:%M:%SZ')
-        #      offre['date_publication'] = date_obj.strftime('%d/%m/%Y %H:%M')
-
+       
+        if 'date_publication' in offre and offre['date_publication']:
+            try:
+                date_str = offre['date_publication'].replace('Z', '+00:00')
+                date_obj = datetime.fromisoformat(date_str)
+                offre['date_publication_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+            except ValueError as ve:
+                print(f"Erreur de formatage de date pour offre {offre.get('id')}: {offre['date_publication']} - {ve}")
+                offre['date_publication_formatee'] = "Date invalide"
+            except Exception as e:
+                print(f"Erreur inattendue lors du traitement de la date pour offre {offre.get('id')}: {e}")
+                offre['date_publication_formatee'] = "Erreur de date"
+        else:
+            offre['date_publication_formatee'] = "Non spécifiée"
+               
     except requests.exceptions.RequestException as e:
         error_message = f"Impossible de récupérer les détails de l’offre : {e}"
         print(f"Erreur lors de l'appel API pour les détails : {e}")
@@ -202,6 +213,21 @@ def liste_offres_emploi(request):
             offres = data.get('results', [])
         else:
             offres = data
+            
+        for offre in offres:
+            if 'date_publication' in offre and offre['date_publication']:
+                try:
+                    date_str = offre['date_publication'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+                    offre['date_publication_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour offre {offre.get('id')}: {offre['date_publication']} - {ve}")
+                    offre['date_publication_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour offre {offre.get('id')}: {e}")
+                    offre['date_publication_formatee'] = "Erreur de date"
+            else:
+                offre['date_publication_formatee'] = "Non spécifiée"
 
     except requests.exceptions.RequestException as e:
         error_message = f"Impossible de récupérer les offres depuis le backend : {e}"
@@ -220,9 +246,9 @@ def liste_offres_pme_avec_candidatures(request):
     token = request.session.get("accessToken")
     if not token:
         messages.warning(request, "Veuillez vous connecter pour voir vos offres et les candidatures.")
-        return redirect("login") # Assurez-vous que 'login' est le nom correct de votre URL de connexion
+        return redirect("login") 
 
-    api_url = "http://127.0.0.1:8001/api/pme/offres/" # Assurez-vous que cette URL API renvoie bien les offres pour la PME connectée
+    api_url = "http://127.0.0.1:8001/api/pme/offres/" 
     offres = []
     error_message = None
 
@@ -237,6 +263,21 @@ def liste_offres_pme_avec_candidatures(request):
             offres = data.get('results', [])
         else:
             offres = data
+            
+        for offre in offres:
+            if 'date_publication' in offre and offre['date_publication']:
+                try:
+                    date_str = offre['date_publication'].replace('Z', '+00:00')
+                    date_obj = datetime.fromisoformat(date_str)
+                    offre['date_publication_formatee'] = date_obj.strftime("%d-%m-%Y à %H:%M:%S")
+                except ValueError as ve:
+                    print(f"Erreur de formatage de date pour offre {offre.get('id')}: {offre['date_publication']} - {ve}")
+                    offre['date_publication_formatee'] = "Date invalide"
+                except Exception as e:
+                    print(f"Erreur inattendue lors du traitement de la date pour offre {offre.get('id')}: {e}")
+                    offre['date_publication_formatee'] = "Erreur de date"
+            else:
+                offre['date_publication_formatee'] = "Non spécifiée"
 
     except requests.exceptions.RequestException as e:
         error_message = f"Impossible de récupérer vos offres depuis le backend : {e}"
@@ -1712,8 +1753,32 @@ def liste_candidatures_offre(request, offre_id):
     return render(request, 'offres_emploi/liste_candidatures_par_offre.html', context)
 
 
-def telecharger_offre(request):
-    """Vue temporaire en attendant l'implémentation complète"""
-    # TODO: À implémenter par [nom du collègue]
-    context = {}  # contexte vide pour l'instant
-    return render(request, 'main_app/offres_emploi_can.html', context)
+def scoring_resultat(request, offre_id):
+    token = request.session.get("accessToken")
+    if not token:
+        messages.warning(request, "Veuillez vous connecter pour lancer le scoring.")
+        return redirect("login")
+
+    api_url = f"http://127.0.0.1:8001/api/pme/offres/{offre_id}/score_candidatures/"
+    candidatures = []
+    error_message = None
+
+    try:
+        headers = {'Authorization': f'Bearer {token}'}
+        response = requests.post(api_url, headers=headers)
+        response.raise_for_status()
+        candidatures = response.json()
+    except requests.exceptions.RequestException as e:
+        error_message = f"Erreur lors du scoring : {e}"
+
+    # Calcul du rang (1, 2, 3...) pour chaque candidature
+    for idx, c in enumerate(candidatures, start=1):
+        c['rang'] = idx
+
+    context = {
+        'candidatures': candidatures,
+        'offre_id': offre_id,
+        'titre_page': "Résultat du scoring",
+        'error_message': error_message,
+    }
+    return render(request, 'offres_emploi/resultat_scoring.html', context)
